@@ -1,6 +1,9 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Order } from "../../../core/entities/orders/Order";
-import { requiredDateISOString } from "../common/dateResponse";
+import {
+  nullableDateISOString,
+  requiredDateISOString,
+} from "../common/dateResponse";
 
 export class OrderResponseDto {
   @ApiProperty() id!: string;
@@ -28,8 +31,28 @@ export class OrderResponseDto {
   @ApiProperty() shippingProvince!: string;
   @ApiProperty() shippingPostalCode!: string;
 
+  @ApiProperty() billingDni!: string;
+  @ApiProperty() billingUseShippingAddress!: boolean;
+  @ApiProperty({ nullable: true }) billingAddress!: string | null;
+  @ApiProperty({ nullable: true }) billingCity!: string | null;
+  @ApiProperty({ nullable: true }) billingProvince!: string | null;
+  @ApiProperty({ nullable: true }) billingPostalCode!: string | null;
+  @ApiProperty() isBusinessPurchase!: boolean;
+  @ApiProperty({ nullable: true }) billingCuit!: string | null;
+  @ApiProperty({ nullable: true }) billingBusinessName!: string | null;
+
+  @ApiProperty({ nullable: true }) mpPreferenceId!: string | null;
   @ApiProperty({ nullable: true }) mpPaymentId!: string | null;
   @ApiProperty({ nullable: true }) mpPaymentStatus!: string | null;
+  @ApiProperty({ nullable: true }) mpPaymentStatusDetail!: string | null;
+
+  @ApiProperty({ nullable: true }) shippingCarrier!: string | null;
+  @ApiProperty({ nullable: true }) shippingTrackingNumber!: string | null;
+  @ApiProperty({ nullable: true }) shippingLabelUrl!: string | null;
+  @ApiProperty({ nullable: true }) shippedAt!: string | null;
+
+  @ApiProperty({ nullable: true }) approvedAt!: string | null;
+  @ApiProperty({ nullable: true }) emailSentAt!: string | null;
 
   @ApiProperty() createdAt!: string;
   @ApiProperty() updatedAt!: string;
@@ -55,8 +78,25 @@ export class OrderResponseDto {
       shippingCity: order.shippingCity,
       shippingProvince: order.shippingProvince,
       shippingPostalCode: order.shippingPostalCode,
+      billingDni: order.billingDni,
+      billingUseShippingAddress: order.billingUseShippingAddress,
+      billingAddress: order.billingAddress,
+      billingCity: order.billingCity,
+      billingProvince: order.billingProvince,
+      billingPostalCode: order.billingPostalCode,
+      isBusinessPurchase: order.isBusinessPurchase,
+      billingCuit: order.billingCuit,
+      billingBusinessName: order.billingBusinessName,
+      mpPreferenceId: order.mpPreferenceId,
       mpPaymentId: order.mpPaymentId,
       mpPaymentStatus: order.mpPaymentStatus,
+      mpPaymentStatusDetail: order.mpPaymentStatusDetail,
+      shippingCarrier: order.shippingCarrier,
+      shippingTrackingNumber: order.shippingTrackingNumber,
+      shippingLabelUrl: order.shippingLabelUrl,
+      shippedAt: nullableDateISOString(order.shippedAt),
+      approvedAt: nullableDateISOString(order.approvedAt),
+      emailSentAt: nullableDateISOString(order.emailSentAt),
       createdAt: requiredDateISOString(order.createdAt, "createdAt"),
       updatedAt: requiredDateISOString(order.updatedAt, "updatedAt"),
     };

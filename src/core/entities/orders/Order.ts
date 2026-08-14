@@ -103,3 +103,9 @@ export interface UpdateMpPaymentInfoData {
   mpPaymentStatus: string;
   mpPaymentStatusDetail: string;
 }
+
+export interface MarkShippedData {
+  carrier: string | null;
+  trackingNumber: string | null;
+  labelUrl: string | null;
+}

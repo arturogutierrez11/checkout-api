@@ -1,5 +1,6 @@
 import {
   CreateOrderData,
+  MarkShippedData,
   Order,
   OrderStatus,
   UpdateMpPaymentInfoData,
@@ -34,4 +35,8 @@ export interface IOrdersRepository {
   /** Atomic: only sets email_sent_at if it was still null. Returns whether it did. */
   markEmailSent(orderId: string): Promise<boolean>;
   clearEmailSent(orderId: string): Promise<void>;
+  /** Atomic: only cancels if it was still 'pending'. Returns whether it did. */
+  cancelPending(orderId: string): Promise<boolean>;
+  /** Atomic: only marks shipped if the order is 'approved' and not shipped yet. Returns whether it did. */
+  markShipped(orderId: string, data: MarkShippedData): Promise<boolean>;
 }

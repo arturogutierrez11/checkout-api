@@ -15,6 +15,7 @@ import {
   ORDER_EMAIL_SENDER,
   IOrderEmailSender,
 } from "../../../core/adapters/services/orderEmail/IOrderEmailSender";
+import { ApplyMercadoPagoPaymentToOrderInteractor } from "../../../core/interactors/orders/ApplyMercadoPagoPaymentToOrderInteractor";
 import { ProcessMercadoPagoWebhookInteractor } from "../../../core/interactors/webhooks/ProcessMercadoPagoWebhookInteractor";
 import { MercadoPagoWebhookController } from "../../controllers/webhooks/MercadoPagoWebhookController";
 import { MercadoPagoWebhookService } from "../../services/webhooks/MercadoPagoWebhookService";
@@ -23,24 +24,35 @@ import { MercadoPagoWebhookService } from "../../services/webhooks/MercadoPagoWe
   controllers: [MercadoPagoWebhookController],
   providers: [
     {
-      provide: ProcessMercadoPagoWebhookInteractor,
+      provide: ApplyMercadoPagoPaymentToOrderInteractor,
       useFactory: (
-        mercadoPagoGateway: IMercadoPagoGateway,
         ordersRepository: IOrdersRepository,
         orderEventsRepository: IOrderEventsRepository,
         orderEmailSender: IOrderEmailSender,
       ) =>
-        new ProcessMercadoPagoWebhookInteractor(
-          mercadoPagoGateway,
+        new ApplyMercadoPagoPaymentToOrderInteractor(
           ordersRepository,
           orderEventsRepository,
           orderEmailSender,
         ),
+      inject: [ORDERS_REPOSITORY, ORDER_EVENTS_REPOSITORY, ORDER_EMAIL_SENDER],
+    },
+    {
+      provide: ProcessMercadoPagoWebhookInteractor,
+      useFactory: (
+        mercadoPagoGateway: IMercadoPagoGateway,
+        ordersRepository: IOrdersRepository,
+        applyMercadoPagoPaymentToOrderInteractor: ApplyMercadoPagoPaymentToOrderInteractor,
+      ) =>
+        new ProcessMercadoPagoWebhookInteractor(
+          mercadoPagoGateway,
+          ordersRepository,
+          applyMercadoPagoPaymentToOrderInteractor,
+        ),
       inject: [
         MERCADO_PAGO_GATEWAY,
         ORDERS_REPOSITORY,
-        ORDER_EVENTS_REPOSITORY,
-        ORDER_EMAIL_SENDER,
+        ApplyMercadoPagoPaymentToOrderInteractor,
       ],
     },
     MercadoPagoWebhookService,

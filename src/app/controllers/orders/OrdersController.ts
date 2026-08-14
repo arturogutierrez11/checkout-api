@@ -17,6 +17,7 @@ import {
 } from "@nestjs/swagger";
 import { CreateOrderDto } from "../../dtos/orders/CreateOrderDto";
 import { CreateOrderResponseDto } from "../../dtos/orders/CreateOrderResponseDto";
+import { MarkOrderShippedDto } from "../../dtos/orders/MarkOrderShippedDto";
 import { OrderResponseDto } from "../../dtos/orders/OrderResponseDto";
 import { CheckoutInternalGuard } from "../../services/checkoutInternalAuth/guards/CheckoutInternalGuard";
 import { OrdersService } from "../../services/orders/OrdersService";
@@ -90,5 +91,39 @@ export class OrdersController {
     });
 
     return orders.map((order) => OrderResponseDto.fromEntity(order));
+  }
+
+  @Post(":id/cancel")
+  @ApiOperation({ summary: "Cancel a pending order and release its stock" })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async cancel(@Param("id") id: string): Promise<OrderResponseDto> {
+    const order = await this.ordersService.cancel(id);
+    return OrderResponseDto.fromEntity(order);
+  }
+
+  @Post(":id/ship")
+  @ApiOperation({ summary: "Mark an approved order as shipped" })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async ship(
+    @Param("id") id: string,
+    @Body() body: MarkOrderShippedDto,
+  ): Promise<OrderResponseDto> {
+    const order = await this.ordersService.ship(id, {
+      carrier: body.carrier ?? null,
+      trackingNumber: body.trackingNumber ?? null,
+      labelUrl: body.labelUrl ?? null,
+    });
+    return OrderResponseDto.fromEntity(order);
+  }
+
+  @Post(":id/resync")
+  @ApiOperation({
+    summary:
+      "Re-check the order's payment status directly against Mercado Pago",
+  })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async resync(@Param("id") id: string): Promise<OrderResponseDto> {
+    const order = await this.ordersService.resync(id);
+    return OrderResponseDto.fromEntity(order);
   }
 }

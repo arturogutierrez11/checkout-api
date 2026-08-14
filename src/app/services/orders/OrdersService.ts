@@ -15,11 +15,16 @@ import {
   ListOrdersFilter,
   ListOrdersInteractor,
 } from "../../../core/interactors/orders/ListOrdersInteractor";
+import { CancelOrderInteractor } from "../../../core/interactors/orders/CancelOrderInteractor";
+import { MarkOrderShippedInteractor } from "../../../core/interactors/orders/MarkOrderShippedInteractor";
+import { ResyncOrderInteractor } from "../../../core/interactors/orders/ResyncOrderInteractor";
 import { InsufficientStockError } from "../../../core/interactors/orders/InsufficientStockError";
+import { OrderNotCancellableError } from "../../../core/interactors/orders/OrderNotCancellableError";
 import { OrderNotFoundError } from "../../../core/interactors/orders/OrderNotFoundError";
+import { OrderNotShippableError } from "../../../core/interactors/orders/OrderNotShippableError";
 import { PaymentPreferenceCreationError } from "../../../core/interactors/orders/PaymentPreferenceCreationError";
 import { ProductNotFoundError } from "../../../core/interactors/orders/ProductNotFoundError";
-import { Order } from "../../../core/entities/orders/Order";
+import { Order, MarkShippedData } from "../../../core/entities/orders/Order";
 import { ApiErrorCode, apiError } from "../../errors/ApiErrorResponse";
 import { IdempotencyService } from "../idempotency/IdempotencyService";
 
@@ -29,6 +34,9 @@ export class OrdersService {
     private readonly createOrderInteractor: CreateOrderInteractor,
     private readonly getOrderInteractor: GetOrderInteractor,
     private readonly listOrdersInteractor: ListOrdersInteractor,
+    private readonly cancelOrderInteractor: CancelOrderInteractor,
+    private readonly markOrderShippedInteractor: MarkOrderShippedInteractor,
+    private readonly resyncOrderInteractor: ResyncOrderInteractor,
     private readonly idempotencyService: IdempotencyService,
   ) {}
 
@@ -90,5 +98,54 @@ export class OrdersService {
 
   list(filter: ListOrdersFilter): Promise<Order[]> {
     return this.listOrdersInteractor.execute(filter);
+  }
+
+  async cancel(orderId: string): Promise<Order> {
+    try {
+      return await this.cancelOrderInteractor.execute(orderId);
+    } catch (err) {
+      if (err instanceof OrderNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.orderNotFound, err.message),
+        );
+      }
+      if (err instanceof OrderNotCancellableError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.orderNotCancellable, err.message),
+        );
+      }
+      throw err;
+    }
+  }
+
+  async ship(orderId: string, data: MarkShippedData): Promise<Order> {
+    try {
+      return await this.markOrderShippedInteractor.execute(orderId, data);
+    } catch (err) {
+      if (err instanceof OrderNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.orderNotFound, err.message),
+        );
+      }
+      if (err instanceof OrderNotShippableError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.orderNotShippable, err.message),
+        );
+      }
+      throw err;
+    }
+  }
+
+  async resync(orderId: string): Promise<Order> {
+    try {
+      return await this.resyncOrderInteractor.execute(orderId);
+    } catch (err) {
+      if (err instanceof OrderNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.orderNotFound, err.message),
+        );
+      }
+      throw err;
+    }
   }
 }

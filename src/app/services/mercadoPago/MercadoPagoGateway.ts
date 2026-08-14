@@ -123,6 +123,44 @@ export class MercadoPagoGateway implements IMercadoPagoGateway {
     };
   }
 
+  async searchPaymentsByExternalReference(
+    externalReference: string,
+  ): Promise<MercadoPagoPayment[]> {
+    const url = new URL(`${MP_API_BASE}/v1/payments/search`);
+    url.searchParams.set("external_reference", externalReference);
+    url.searchParams.set("sort", "date_created");
+    url.searchParams.set("criteria", "desc");
+
+    const response = await fetch(url, {
+      headers: { Authorization: `Bearer ${getAccessToken()}` },
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(
+        `No pudimos buscar pagos en Mercado Pago (${response.status}): ${detail}`,
+      );
+    }
+
+    const data = (await response.json()) as {
+      results: {
+        id: number;
+        status: string;
+        status_detail: string;
+        external_reference: string | null;
+        transaction_amount: number;
+      }[];
+    };
+
+    return data.results.map((payment) => ({
+      id: payment.id,
+      status: payment.status,
+      statusDetail: payment.status_detail,
+      externalReference: payment.external_reference ?? null,
+      transactionAmount: payment.transaction_amount,
+    }));
+  }
+
   verifyWebhookSignature(input: VerifyWebhookSignatureInput): boolean {
     const secret = env.mercadoPagoWebhookSecret;
 

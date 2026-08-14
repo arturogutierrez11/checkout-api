@@ -4,6 +4,7 @@ import { EntityManager } from "typeorm";
 import { IOrdersRepository } from "../../../../core/adapters/repositories/orders/IOrdersRepository";
 import {
   CreateOrderData,
+  MarkShippedData,
   Order,
   OrderStatus,
   UpdateMpPaymentInfoData,
@@ -306,6 +307,39 @@ export class SQLOrdersRepository implements IOrdersRepository {
       `,
       [orderId],
     );
+  }
+
+  async cancelPending(orderId: string): Promise<boolean> {
+    const rows = await this.queryRows<{ id: string }>(
+      `
+        update checkout_orders
+        set status = 'cancelled', updated_at = now()
+        where id = $1 and status = 'pending'
+        returning id
+      `,
+      [orderId],
+    );
+
+    return rows.length > 0;
+  }
+
+  async markShipped(orderId: string, data: MarkShippedData): Promise<boolean> {
+    const rows = await this.queryRows<{ id: string }>(
+      `
+        update checkout_orders
+        set
+          shipped_at = now(),
+          shipping_carrier = $2,
+          shipping_tracking_number = $3,
+          shipping_label_url = $4,
+          updated_at = now()
+        where id = $1 and status = 'approved' and shipped_at is null
+        returning id
+      `,
+      [orderId, data.carrier, data.trackingNumber, data.labelUrl],
+    );
+
+    return rows.length > 0;
   }
 
   private mapRowToOrder(row: OrderRow): Order {
