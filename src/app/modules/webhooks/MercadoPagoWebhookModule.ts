@@ -1,5 +1,9 @@
 import { Module } from "@nestjs/common";
 import {
+  INVENTORY_MOVEMENTS_REPOSITORY,
+  IInventoryMovementsRepository,
+} from "../../../core/adapters/repositories/inventoryMovements/IInventoryMovementsRepository";
+import {
   ORDER_EVENTS_REPOSITORY,
   IOrderEventsRepository,
 } from "../../../core/adapters/repositories/orderEvents/IOrderEventsRepository";
@@ -8,6 +12,10 @@ import {
   IOrdersRepository,
 } from "../../../core/adapters/repositories/orders/IOrdersRepository";
 import {
+  PRODUCTS_REPOSITORY,
+  IProductsRepository,
+} from "../../../core/adapters/repositories/products/IProductsRepository";
+import {
   MERCADO_PAGO_GATEWAY,
   IMercadoPagoGateway,
 } from "../../../core/adapters/services/mercadoPago/IMercadoPagoGateway";
@@ -15,6 +23,7 @@ import {
   ORDER_EMAIL_SENDER,
   IOrderEmailSender,
 } from "../../../core/adapters/services/orderEmail/IOrderEmailSender";
+import { ReleaseOrderStockInteractor } from "../../../core/interactors/inventory/ReleaseOrderStockInteractor";
 import { ApplyMercadoPagoPaymentToOrderInteractor } from "../../../core/interactors/orders/ApplyMercadoPagoPaymentToOrderInteractor";
 import { ProcessMercadoPagoWebhookInteractor } from "../../../core/interactors/webhooks/ProcessMercadoPagoWebhookInteractor";
 import { MercadoPagoWebhookController } from "../../controllers/webhooks/MercadoPagoWebhookController";
@@ -24,18 +33,37 @@ import { MercadoPagoWebhookService } from "../../services/webhooks/MercadoPagoWe
   controllers: [MercadoPagoWebhookController],
   providers: [
     {
+      provide: ReleaseOrderStockInteractor,
+      useFactory: (
+        productsRepository: IProductsRepository,
+        inventoryMovementsRepository: IInventoryMovementsRepository,
+      ) =>
+        new ReleaseOrderStockInteractor(
+          productsRepository,
+          inventoryMovementsRepository,
+        ),
+      inject: [PRODUCTS_REPOSITORY, INVENTORY_MOVEMENTS_REPOSITORY],
+    },
+    {
       provide: ApplyMercadoPagoPaymentToOrderInteractor,
       useFactory: (
         ordersRepository: IOrdersRepository,
         orderEventsRepository: IOrderEventsRepository,
         orderEmailSender: IOrderEmailSender,
+        releaseOrderStockInteractor: ReleaseOrderStockInteractor,
       ) =>
         new ApplyMercadoPagoPaymentToOrderInteractor(
           ordersRepository,
           orderEventsRepository,
           orderEmailSender,
+          releaseOrderStockInteractor,
         ),
-      inject: [ORDERS_REPOSITORY, ORDER_EVENTS_REPOSITORY, ORDER_EMAIL_SENDER],
+      inject: [
+        ORDERS_REPOSITORY,
+        ORDER_EVENTS_REPOSITORY,
+        ORDER_EMAIL_SENDER,
+        ReleaseOrderStockInteractor,
+      ],
     },
     {
       provide: ProcessMercadoPagoWebhookInteractor,

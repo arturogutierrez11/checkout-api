@@ -3,6 +3,7 @@ import { IOrdersRepository } from "../../adapters/repositories/orders/IOrdersRep
 import { MercadoPagoPayment } from "../../adapters/services/mercadoPago/IMercadoPagoGateway";
 import { IOrderEmailSender } from "../../adapters/services/orderEmail/IOrderEmailSender";
 import { Order } from "../../entities/orders/Order";
+import { ReleaseOrderStockInteractor } from "../inventory/ReleaseOrderStockInteractor";
 
 function mapMpStatusToOrderStatus(
   mpStatus: string,
@@ -25,6 +26,7 @@ export class ApplyMercadoPagoPaymentToOrderInteractor {
     private readonly ordersRepository: IOrdersRepository,
     private readonly orderEventsRepository: IOrderEventsRepository,
     private readonly orderEmailSender: IOrderEmailSender,
+    private readonly releaseOrderStockInteractor: ReleaseOrderStockInteractor,
   ) {}
 
   async execute(order: Order, payment: MercadoPagoPayment): Promise<void> {
@@ -59,6 +61,16 @@ export class ApplyMercadoPagoPaymentToOrderInteractor {
           eventType: "status_transitioned",
           payload: { from: "pending", to: nextStatus, paymentId: payment.id },
         });
+
+        if (nextStatus === "rejected" || nextStatus === "cancelled") {
+          await this.releaseOrderStockInteractor.execute({
+            orderId: order.id,
+            productId: order.productId,
+            quantity: order.quantity,
+            movementType: "cancellation",
+            note: `mp_status_${payment.status}`,
+          });
+        }
       }
     } else {
       await this.ordersRepository.updateMpPaymentInfo(order.id, mpFields);

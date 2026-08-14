@@ -1,9 +1,12 @@
+import { IInventoryMovementsRepository } from "../../adapters/repositories/inventoryMovements/IInventoryMovementsRepository";
 import { IOrderEventsRepository } from "../../adapters/repositories/orderEvents/IOrderEventsRepository";
 import { IOrdersRepository } from "../../adapters/repositories/orders/IOrdersRepository";
 import { IProductsRepository } from "../../adapters/repositories/products/IProductsRepository";
 import { IMercadoPagoGateway } from "../../adapters/services/mercadoPago/IMercadoPagoGateway";
 import { ShippingMethod } from "../../entities/orders/Order";
 import { SHIPPING_PRICES } from "../../entities/orders/shippingPrices";
+import { PACKAGING_SKU } from "../../entities/products/Product";
+import { ReleaseOrderStockInteractor } from "../inventory/ReleaseOrderStockInteractor";
 import { InsufficientStockError } from "./InsufficientStockError";
 import { PaymentPreferenceCreationError } from "./PaymentPreferenceCreationError";
 import { ProductNotFoundError } from "./ProductNotFoundError";
@@ -47,6 +50,8 @@ export class CreateOrderInteractor {
     private readonly productsRepository: IProductsRepository,
     private readonly ordersRepository: IOrdersRepository,
     private readonly orderEventsRepository: IOrderEventsRepository,
+    private readonly inventoryMovementsRepository: IInventoryMovementsRepository,
+    private readonly releaseOrderStockInteractor: ReleaseOrderStockInteractor,
     private readonly mercadoPagoGateway: IMercadoPagoGateway,
   ) {}
 
@@ -57,13 +62,29 @@ export class CreateOrderInteractor {
       throw new ProductNotFoundError(input.productSlug);
     }
 
-    const reserved = await this.productsRepository.decrementStock(
+    const packaging = await this.productsRepository.getBySku(PACKAGING_SKU);
+
+    if (!packaging) {
+      throw new Error(`Packaging product ${PACKAGING_SKU} not found`);
+    }
+
+    const productStock = await this.productsRepository.decrementStock(
       product.id,
       input.quantity,
     );
 
-    if (!reserved) {
+    if (productStock === null) {
       throw new InsufficientStockError(product.id);
+    }
+
+    const packagingStock = await this.productsRepository.decrementStock(
+      packaging.id,
+      1,
+    );
+
+    if (packagingStock === null) {
+      await this.productsRepository.incrementStock(product.id, input.quantity);
+      throw new InsufficientStockError(packaging.id);
     }
 
     const subtotal = product.price * input.quantity;
@@ -103,9 +124,29 @@ export class CreateOrderInteractor {
       });
       orderId = order.id;
     } catch (err) {
-      await this.productsRepository.incrementStock(product.id, input.quantity);
+      await Promise.allSettled([
+        this.productsRepository.incrementStock(product.id, input.quantity),
+        this.productsRepository.incrementStock(packaging.id, 1),
+      ]);
       throw err;
     }
+
+    await Promise.all([
+      this.inventoryMovementsRepository.record({
+        productId: product.id,
+        movementType: "sale",
+        quantityDelta: -input.quantity,
+        stockAfter: productStock,
+        orderId,
+      }),
+      this.inventoryMovementsRepository.record({
+        productId: packaging.id,
+        movementType: "sale",
+        quantityDelta: -1,
+        stockAfter: packagingStock,
+        orderId,
+      }),
+    ]);
 
     try {
       const order = await this.ordersRepository.getById(orderId);
@@ -128,7 +169,13 @@ export class CreateOrderInteractor {
       return { orderId, initPoint: preference.initPoint };
     } catch (err) {
       await Promise.allSettled([
-        this.productsRepository.incrementStock(product.id, input.quantity),
+        this.releaseOrderStockInteractor.execute({
+          orderId,
+          productId: product.id,
+          quantity: input.quantity,
+          movementType: "cancellation",
+          note: "payment_init_failed",
+        }),
         this.ordersRepository.markPaymentInitFailed(orderId),
         this.orderEventsRepository.append({
           orderId,

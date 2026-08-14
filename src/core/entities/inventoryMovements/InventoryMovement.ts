@@ -1,0 +1,24 @@
+export type MovementType =
+  "sale" | "cancellation" | "return" | "gift" | "restock";
+
+export interface InventoryMovement {
+  id: string;
+  productId: string;
+  movementType: MovementType;
+  quantityDelta: number;
+  stockAfter: number;
+  orderId: string | null;
+  note: string | null;
+  occurredAt: Date;
+  createdAt: Date;
+}
+
+export interface RecordInventoryMovementData {
+  productId: string;
+  movementType: MovementType;
+  quantityDelta: number;
+  stockAfter: number;
+  orderId?: string | null;
+  note?: string | null;
+  occurredAt?: Date;
+}

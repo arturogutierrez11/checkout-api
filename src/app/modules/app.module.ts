@@ -5,6 +5,7 @@ import { ExternalServicesModule } from "./externalServices/ExternalServicesModul
 import { HealthModule } from "./health.module";
 import { ProductsModule } from "./products/ProductsModule";
 import { OrdersModule } from "./orders/OrdersModule";
+import { InventoryModule } from "./inventory/InventoryModule";
 import { MercadoPagoWebhookModule } from "./webhooks/MercadoPagoWebhookModule";
 
 @Module({
@@ -15,6 +16,7 @@ import { MercadoPagoWebhookModule } from "./webhooks/MercadoPagoWebhookModule";
     HealthModule,
     ProductsModule,
     OrdersModule,
+    InventoryModule,
     MercadoPagoWebhookModule,
   ],
 })

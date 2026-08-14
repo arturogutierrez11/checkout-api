@@ -1,9 +1,11 @@
 import { Global, Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { env } from "../../../config/env";
+import { INVENTORY_MOVEMENTS_REPOSITORY } from "../../../core/adapters/repositories/inventoryMovements/IInventoryMovementsRepository";
 import { ORDER_EVENTS_REPOSITORY } from "../../../core/adapters/repositories/orderEvents/IOrderEventsRepository";
 import { ORDERS_REPOSITORY } from "../../../core/adapters/repositories/orders/IOrdersRepository";
 import { PRODUCTS_REPOSITORY } from "../../../core/adapters/repositories/products/IProductsRepository";
+import { SQLInventoryMovementsRepository } from "../../drivers/repositories/inventoryMovements/SQLInventoryMovementsRepository";
 import { SQLOrderEventsRepository } from "../../drivers/repositories/orderEvents/SQLOrderEventsRepository";
 import { SQLOrdersRepository } from "../../drivers/repositories/orders/SQLOrdersRepository";
 import { SQLProductsRepository } from "../../drivers/repositories/products/SQLProductsRepository";
@@ -22,7 +24,16 @@ import { SQLProductsRepository } from "../../drivers/repositories/products/SQLPr
     { provide: PRODUCTS_REPOSITORY, useClass: SQLProductsRepository },
     { provide: ORDERS_REPOSITORY, useClass: SQLOrdersRepository },
     { provide: ORDER_EVENTS_REPOSITORY, useClass: SQLOrderEventsRepository },
+    {
+      provide: INVENTORY_MOVEMENTS_REPOSITORY,
+      useClass: SQLInventoryMovementsRepository,
+    },
   ],
-  exports: [PRODUCTS_REPOSITORY, ORDERS_REPOSITORY, ORDER_EVENTS_REPOSITORY],
+  exports: [
+    PRODUCTS_REPOSITORY,
+    ORDERS_REPOSITORY,
+    ORDER_EVENTS_REPOSITORY,
+    INVENTORY_MOVEMENTS_REPOSITORY,
+  ],
 })
 export class DatabaseModule {}

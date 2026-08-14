@@ -1,5 +1,9 @@
 import { Module } from "@nestjs/common";
 import {
+  IInventoryMovementsRepository,
+  INVENTORY_MOVEMENTS_REPOSITORY,
+} from "../../../core/adapters/repositories/inventoryMovements/IInventoryMovementsRepository";
+import {
   IOrderEventsRepository,
   ORDER_EVENTS_REPOSITORY,
 } from "../../../core/adapters/repositories/orderEvents/IOrderEventsRepository";
@@ -19,6 +23,7 @@ import {
   IOrderEmailSender,
   ORDER_EMAIL_SENDER,
 } from "../../../core/adapters/services/orderEmail/IOrderEmailSender";
+import { ReleaseOrderStockInteractor } from "../../../core/interactors/inventory/ReleaseOrderStockInteractor";
 import { ApplyMercadoPagoPaymentToOrderInteractor } from "../../../core/interactors/orders/ApplyMercadoPagoPaymentToOrderInteractor";
 import { CancelOrderInteractor } from "../../../core/interactors/orders/CancelOrderInteractor";
 import { CreateOrderInteractor } from "../../../core/interactors/orders/CreateOrderInteractor";
@@ -26,6 +31,7 @@ import { GetOrderInteractor } from "../../../core/interactors/orders/GetOrderInt
 import { ListOrdersInteractor } from "../../../core/interactors/orders/ListOrdersInteractor";
 import { MarkOrderShippedInteractor } from "../../../core/interactors/orders/MarkOrderShippedInteractor";
 import { ResyncOrderInteractor } from "../../../core/interactors/orders/ResyncOrderInteractor";
+import { ReturnOrderInteractor } from "../../../core/interactors/orders/ReturnOrderInteractor";
 import { SetInvoiceStatusInteractor } from "../../../core/interactors/orders/SetInvoiceStatusInteractor";
 import { SetShippingStatusInteractor } from "../../../core/interactors/orders/SetShippingStatusInteractor";
 import { OrdersController } from "../../controllers/orders/OrdersController";
@@ -36,18 +42,37 @@ import { OrdersService } from "../../services/orders/OrdersService";
   controllers: [OrdersController],
   providers: [
     {
+      provide: ReleaseOrderStockInteractor,
+      useFactory: (
+        productsRepository: IProductsRepository,
+        inventoryMovementsRepository: IInventoryMovementsRepository,
+      ) =>
+        new ReleaseOrderStockInteractor(
+          productsRepository,
+          inventoryMovementsRepository,
+        ),
+      inject: [PRODUCTS_REPOSITORY, INVENTORY_MOVEMENTS_REPOSITORY],
+    },
+    {
       provide: ApplyMercadoPagoPaymentToOrderInteractor,
       useFactory: (
         ordersRepository: IOrdersRepository,
         orderEventsRepository: IOrderEventsRepository,
         orderEmailSender: IOrderEmailSender,
+        releaseOrderStockInteractor: ReleaseOrderStockInteractor,
       ) =>
         new ApplyMercadoPagoPaymentToOrderInteractor(
           ordersRepository,
           orderEventsRepository,
           orderEmailSender,
+          releaseOrderStockInteractor,
         ),
-      inject: [ORDERS_REPOSITORY, ORDER_EVENTS_REPOSITORY, ORDER_EMAIL_SENDER],
+      inject: [
+        ORDERS_REPOSITORY,
+        ORDER_EVENTS_REPOSITORY,
+        ORDER_EMAIL_SENDER,
+        ReleaseOrderStockInteractor,
+      ],
     },
     {
       provide: CreateOrderInteractor,
@@ -55,18 +80,24 @@ import { OrdersService } from "../../services/orders/OrdersService";
         productsRepository: IProductsRepository,
         ordersRepository: IOrdersRepository,
         orderEventsRepository: IOrderEventsRepository,
+        inventoryMovementsRepository: IInventoryMovementsRepository,
+        releaseOrderStockInteractor: ReleaseOrderStockInteractor,
         mercadoPagoGateway: IMercadoPagoGateway,
       ) =>
         new CreateOrderInteractor(
           productsRepository,
           ordersRepository,
           orderEventsRepository,
+          inventoryMovementsRepository,
+          releaseOrderStockInteractor,
           mercadoPagoGateway,
         ),
       inject: [
         PRODUCTS_REPOSITORY,
         ORDERS_REPOSITORY,
         ORDER_EVENTS_REPOSITORY,
+        INVENTORY_MOVEMENTS_REPOSITORY,
+        ReleaseOrderStockInteractor,
         MERCADO_PAGO_GATEWAY,
       ],
     },
@@ -86,15 +117,19 @@ import { OrdersService } from "../../services/orders/OrdersService";
       provide: CancelOrderInteractor,
       useFactory: (
         ordersRepository: IOrdersRepository,
-        productsRepository: IProductsRepository,
+        releaseOrderStockInteractor: ReleaseOrderStockInteractor,
         orderEventsRepository: IOrderEventsRepository,
       ) =>
         new CancelOrderInteractor(
           ordersRepository,
-          productsRepository,
+          releaseOrderStockInteractor,
           orderEventsRepository,
         ),
-      inject: [ORDERS_REPOSITORY, PRODUCTS_REPOSITORY, ORDER_EVENTS_REPOSITORY],
+      inject: [
+        ORDERS_REPOSITORY,
+        ReleaseOrderStockInteractor,
+        ORDER_EVENTS_REPOSITORY,
+      ],
     },
     {
       provide: MarkOrderShippedInteractor,
@@ -126,6 +161,24 @@ import { OrdersService } from "../../services/orders/OrdersService";
         ORDERS_REPOSITORY,
         MERCADO_PAGO_GATEWAY,
         ApplyMercadoPagoPaymentToOrderInteractor,
+      ],
+    },
+    {
+      provide: ReturnOrderInteractor,
+      useFactory: (
+        ordersRepository: IOrdersRepository,
+        inventoryMovementsRepository: IInventoryMovementsRepository,
+        releaseOrderStockInteractor: ReleaseOrderStockInteractor,
+      ) =>
+        new ReturnOrderInteractor(
+          ordersRepository,
+          inventoryMovementsRepository,
+          releaseOrderStockInteractor,
+        ),
+      inject: [
+        ORDERS_REPOSITORY,
+        INVENTORY_MOVEMENTS_REPOSITORY,
+        ReleaseOrderStockInteractor,
       ],
     },
     {

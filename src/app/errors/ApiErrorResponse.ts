@@ -5,6 +5,7 @@ export const ApiErrorCode = {
   orderNotFound: "ORDER_NOT_FOUND",
   orderNotCancellable: "ORDER_NOT_CANCELLABLE",
   orderNotShippable: "ORDER_NOT_SHIPPABLE",
+  orderNotReturnable: "ORDER_NOT_RETURNABLE",
   idempotencyKeyReused: "IDEMPOTENCY_KEY_REUSED",
   invalidWebhookSignature: "INVALID_WEBHOOK_SIGNATURE",
 } as const;

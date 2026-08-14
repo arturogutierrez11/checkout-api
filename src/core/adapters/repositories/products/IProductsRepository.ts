@@ -4,10 +4,12 @@ export const PRODUCTS_REPOSITORY = Symbol("PRODUCTS_REPOSITORY");
 
 export interface IProductsRepository {
   listActive(): Promise<Product[]>;
+  listAll(): Promise<Product[]>;
   getBySlug(slug: string): Promise<Product | null>;
+  getBySku(sku: string): Promise<Product | null>;
   getById(id: string): Promise<Product | null>;
-  /** Atomic: only succeeds (returns true) if enough stock was available. */
-  decrementStock(productId: string, quantity: number): Promise<boolean>;
-  /** Compensation for a failed order creation / MP preference creation. */
-  incrementStock(productId: string, quantity: number): Promise<void>;
+  /** Atomic: only succeeds if enough stock was available. Returns the resulting stock, or null if not. */
+  decrementStock(productId: string, quantity: number): Promise<number | null>;
+  /** Returns the resulting stock. */
+  incrementStock(productId: string, quantity: number): Promise<number>;
 }

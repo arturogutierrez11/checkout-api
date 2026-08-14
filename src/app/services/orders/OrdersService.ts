@@ -18,11 +18,13 @@ import {
 import { CancelOrderInteractor } from "../../../core/interactors/orders/CancelOrderInteractor";
 import { MarkOrderShippedInteractor } from "../../../core/interactors/orders/MarkOrderShippedInteractor";
 import { ResyncOrderInteractor } from "../../../core/interactors/orders/ResyncOrderInteractor";
+import { ReturnOrderInteractor } from "../../../core/interactors/orders/ReturnOrderInteractor";
 import { SetInvoiceStatusInteractor } from "../../../core/interactors/orders/SetInvoiceStatusInteractor";
 import { SetShippingStatusInteractor } from "../../../core/interactors/orders/SetShippingStatusInteractor";
 import { InsufficientStockError } from "../../../core/interactors/orders/InsufficientStockError";
 import { OrderNotCancellableError } from "../../../core/interactors/orders/OrderNotCancellableError";
 import { OrderNotFoundError } from "../../../core/interactors/orders/OrderNotFoundError";
+import { OrderNotReturnableError } from "../../../core/interactors/orders/OrderNotReturnableError";
 import { OrderNotShippableError } from "../../../core/interactors/orders/OrderNotShippableError";
 import { PaymentPreferenceCreationError } from "../../../core/interactors/orders/PaymentPreferenceCreationError";
 import { ProductNotFoundError } from "../../../core/interactors/orders/ProductNotFoundError";
@@ -43,6 +45,7 @@ export class OrdersService {
     private readonly cancelOrderInteractor: CancelOrderInteractor,
     private readonly markOrderShippedInteractor: MarkOrderShippedInteractor,
     private readonly resyncOrderInteractor: ResyncOrderInteractor,
+    private readonly returnOrderInteractor: ReturnOrderInteractor,
     private readonly setShippingStatusInteractor: SetShippingStatusInteractor,
     private readonly setInvoiceStatusInteractor: SetInvoiceStatusInteractor,
     private readonly idempotencyService: IdempotencyService,
@@ -151,6 +154,24 @@ export class OrdersService {
       if (err instanceof OrderNotFoundError) {
         throw new NotFoundException(
           apiError(ApiErrorCode.orderNotFound, err.message),
+        );
+      }
+      throw err;
+    }
+  }
+
+  async returnOrder(orderId: string, note?: string): Promise<Order> {
+    try {
+      return await this.returnOrderInteractor.execute(orderId, note);
+    } catch (err) {
+      if (err instanceof OrderNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.orderNotFound, err.message),
+        );
+      }
+      if (err instanceof OrderNotReturnableError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.orderNotReturnable, err.message),
         );
       }
       throw err;

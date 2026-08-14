@@ -13,6 +13,7 @@ interface ProductRow {
   currency: string;
   stock: number;
   isActive: boolean;
+  isInternal: boolean;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -36,11 +37,30 @@ export class SQLProductsRepository implements IProductsRepository {
           currency,
           stock,
           is_active as "isActive",
+          is_internal as "isInternal",
           created_at as "createdAt",
           updated_at as "updatedAt"
         from checkout_products
-        where is_active = true
+        where is_active = true and is_internal = false
         order by price asc
+      `,
+      [],
+    );
+
+    return rows.map((row) => this.mapRowToProduct(row));
+  }
+
+  async listAll(): Promise<Product[]> {
+    const rows = await this.queryRows<ProductRow>(
+      `
+        select
+          id, slug, sku, name, price, currency, stock,
+          is_active as "isActive",
+          is_internal as "isInternal",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        from checkout_products
+        order by is_internal asc, price asc
       `,
       [],
     );
@@ -54,6 +74,7 @@ export class SQLProductsRepository implements IProductsRepository {
         select
           id, slug, sku, name, price, currency, stock,
           is_active as "isActive",
+          is_internal as "isInternal",
           created_at as "createdAt",
           updated_at as "updatedAt"
         from checkout_products
@@ -65,12 +86,31 @@ export class SQLProductsRepository implements IProductsRepository {
     return rows[0] ? this.mapRowToProduct(rows[0]) : null;
   }
 
+  async getBySku(sku: string): Promise<Product | null> {
+    const rows = await this.queryRows<ProductRow>(
+      `
+        select
+          id, slug, sku, name, price, currency, stock,
+          is_active as "isActive",
+          is_internal as "isInternal",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+        from checkout_products
+        where sku = $1
+      `,
+      [sku],
+    );
+
+    return rows[0] ? this.mapRowToProduct(rows[0]) : null;
+  }
+
   async getById(id: string): Promise<Product | null> {
     const rows = await this.queryRows<ProductRow>(
       `
         select
           id, slug, sku, name, price, currency, stock,
           is_active as "isActive",
+          is_internal as "isInternal",
           created_at as "createdAt",
           updated_at as "updatedAt"
         from checkout_products
@@ -82,29 +122,41 @@ export class SQLProductsRepository implements IProductsRepository {
     return rows[0] ? this.mapRowToProduct(rows[0]) : null;
   }
 
-  async decrementStock(productId: string, quantity: number): Promise<boolean> {
-    const rows = await this.queryRows<{ id: string }>(
+  async decrementStock(
+    productId: string,
+    quantity: number,
+  ): Promise<number | null> {
+    const rows = await this.queryRows<{ stock: number }>(
       `
         update checkout_products
         set stock = stock - $2, updated_at = now()
         where id = $1 and stock >= $2
-        returning id
+        returning stock
       `,
       [productId, quantity],
     );
 
-    return rows.length > 0;
+    return rows[0] ? rows[0].stock : null;
   }
 
-  async incrementStock(productId: string, quantity: number): Promise<void> {
-    await this.entityManager.query(
+  async incrementStock(productId: string, quantity: number): Promise<number> {
+    const rows = await this.queryRows<{ stock: number }>(
       `
         update checkout_products
         set stock = stock + $2, updated_at = now()
         where id = $1
+        returning stock
       `,
       [productId, quantity],
     );
+
+    if (!rows[0]) {
+      throw new Error(
+        `Product ${productId} not found while incrementing stock`,
+      );
+    }
+
+    return rows[0].stock;
   }
 
   private mapRowToProduct(row: ProductRow): Product {
@@ -117,6 +169,7 @@ export class SQLProductsRepository implements IProductsRepository {
       currency: row.currency,
       stock: row.stock,
       isActive: row.isActive,
+      isInternal: row.isInternal,
       createdAt: this.toDate(row.createdAt),
       updatedAt: this.toDate(row.updatedAt),
     };

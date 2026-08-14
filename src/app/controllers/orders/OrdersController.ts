@@ -19,6 +19,7 @@ import { CreateOrderDto } from "../../dtos/orders/CreateOrderDto";
 import { CreateOrderResponseDto } from "../../dtos/orders/CreateOrderResponseDto";
 import { MarkOrderShippedDto } from "../../dtos/orders/MarkOrderShippedDto";
 import { OrderResponseDto } from "../../dtos/orders/OrderResponseDto";
+import { ReturnOrderDto } from "../../dtos/orders/ReturnOrderDto";
 import { SetInvoiceStatusDto } from "../../dtos/orders/SetInvoiceStatusDto";
 import { SetShippingStatusDto } from "../../dtos/orders/SetShippingStatusDto";
 import { CheckoutInternalGuard } from "../../services/checkoutInternalAuth/guards/CheckoutInternalGuard";
@@ -151,6 +152,19 @@ export class OrdersController {
     @Body() body: SetInvoiceStatusDto,
   ): Promise<OrderResponseDto> {
     const order = await this.ordersService.setInvoiceStatus(id, body.invoiced);
+    return OrderResponseDto.fromEntity(order);
+  }
+
+  @Post(":id/return")
+  @ApiOperation({
+    summary: "Register a return for a paid order and release its stock",
+  })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async returnOrder(
+    @Param("id") id: string,
+    @Body() body: ReturnOrderDto,
+  ): Promise<OrderResponseDto> {
+    const order = await this.ordersService.returnOrder(id, body.note);
     return OrderResponseDto.fromEntity(order);
   }
 }
