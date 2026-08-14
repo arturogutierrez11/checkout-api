@@ -99,9 +99,14 @@ import { OrdersService } from "../../services/orders/OrdersService";
       useFactory: (
         ordersRepository: IOrdersRepository,
         orderEventsRepository: IOrderEventsRepository,
+        orderEmailSender: IOrderEmailSender,
       ) =>
-        new MarkOrderShippedInteractor(ordersRepository, orderEventsRepository),
-      inject: [ORDERS_REPOSITORY, ORDER_EVENTS_REPOSITORY],
+        new MarkOrderShippedInteractor(
+          ordersRepository,
+          orderEventsRepository,
+          orderEmailSender,
+        ),
+      inject: [ORDERS_REPOSITORY, ORDER_EVENTS_REPOSITORY, ORDER_EMAIL_SENDER],
     },
     {
       provide: ResyncOrderInteractor,
