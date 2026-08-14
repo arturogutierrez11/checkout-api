@@ -3,6 +3,7 @@ import {
   MarkShippedData,
   Order,
   OrderStatus,
+  ShippingStatus,
   UpdateMpPaymentInfoData,
 } from "../../../entities/orders/Order";
 
@@ -39,4 +40,8 @@ export interface IOrdersRepository {
   cancelPending(orderId: string): Promise<boolean>;
   /** Atomic: only marks shipped if the order is 'approved' and not shipped yet. Returns whether it did. */
   markShipped(orderId: string, data: MarkShippedData): Promise<boolean>;
+  /** Manual status set for the simple (non-tracking) shipping states. Returns whether the order existed. */
+  setShippingStatus(orderId: string, status: ShippingStatus): Promise<boolean>;
+  /** Manual invoicing flag until a real AFIP/ARCA integration exists. Returns whether the order existed. */
+  setInvoiceStatus(orderId: string, invoiced: boolean): Promise<boolean>;
 }

@@ -7,6 +7,7 @@ import {
   MarkShippedData,
   Order,
   OrderStatus,
+  ShippingStatus,
   UpdateMpPaymentInfoData,
 } from "../../../../core/entities/orders/Order";
 
@@ -45,6 +46,7 @@ interface OrderRow {
   mpPaymentId: string | null;
   mpPaymentStatus: string | null;
   mpPaymentStatusDetail: string | null;
+  shippingStatus: string;
   shippingCarrier: string | null;
   shippingTrackingNumber: string | null;
   shippingLabelUrl: string | null;
@@ -95,6 +97,7 @@ const ORDER_COLUMNS = `
   mp_payment_id as "mpPaymentId",
   mp_payment_status as "mpPaymentStatus",
   mp_payment_status_detail as "mpPaymentStatusDetail",
+  shipping_status as "shippingStatus",
   shipping_carrier as "shippingCarrier",
   shipping_tracking_number as "shippingTrackingNumber",
   shipping_label_url as "shippingLabelUrl",
@@ -329,6 +332,7 @@ export class SQLOrdersRepository implements IOrdersRepository {
         update checkout_orders
         set
           shipped_at = now(),
+          shipping_status = 'shipped',
           shipping_carrier = $2,
           shipping_tracking_number = $3,
           shipping_label_url = $4,
@@ -337,6 +341,40 @@ export class SQLOrdersRepository implements IOrdersRepository {
         returning id
       `,
       [orderId, data.carrier, data.trackingNumber, data.labelUrl],
+    );
+
+    return rows.length > 0;
+  }
+
+  async setShippingStatus(
+    orderId: string,
+    status: ShippingStatus,
+  ): Promise<boolean> {
+    const rows = await this.queryRows<{ id: string }>(
+      `
+        update checkout_orders
+        set shipping_status = $2, updated_at = now()
+        where id = $1
+        returning id
+      `,
+      [orderId, status],
+    );
+
+    return rows.length > 0;
+  }
+
+  async setInvoiceStatus(orderId: string, invoiced: boolean): Promise<boolean> {
+    const rows = await this.queryRows<{ id: string }>(
+      `
+        update checkout_orders
+        set
+          invoice_status = $2,
+          invoiced_at = case when $2 = 'invoiced' then now() else null end,
+          updated_at = now()
+        where id = $1
+        returning id
+      `,
+      [orderId, invoiced ? "invoiced" : null],
     );
 
     return rows.length > 0;
@@ -378,6 +416,7 @@ export class SQLOrdersRepository implements IOrdersRepository {
       mpPaymentId: row.mpPaymentId,
       mpPaymentStatus: row.mpPaymentStatus,
       mpPaymentStatusDetail: row.mpPaymentStatusDetail,
+      shippingStatus: row.shippingStatus as Order["shippingStatus"],
       shippingCarrier: row.shippingCarrier,
       shippingTrackingNumber: row.shippingTrackingNumber,
       shippingLabelUrl: row.shippingLabelUrl,

@@ -3,6 +3,10 @@ export type OrderStatus =
 
 export type ShippingMethod = "standard" | "express";
 
+/** Independent from OrderStatus (payment) — tracked manually until a real courier integration exists. */
+export type ShippingStatus =
+  "pending_dispatch" | "dispatched" | "shipped" | "cancelled";
+
 export interface Order {
   id: string;
 
@@ -46,6 +50,7 @@ export interface Order {
   mpPaymentStatus: string | null;
   mpPaymentStatusDetail: string | null;
 
+  shippingStatus: ShippingStatus;
   shippingCarrier: string | null;
   shippingTrackingNumber: string | null;
   shippingLabelUrl: string | null;

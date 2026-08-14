@@ -19,6 +19,8 @@ import { CreateOrderDto } from "../../dtos/orders/CreateOrderDto";
 import { CreateOrderResponseDto } from "../../dtos/orders/CreateOrderResponseDto";
 import { MarkOrderShippedDto } from "../../dtos/orders/MarkOrderShippedDto";
 import { OrderResponseDto } from "../../dtos/orders/OrderResponseDto";
+import { SetInvoiceStatusDto } from "../../dtos/orders/SetInvoiceStatusDto";
+import { SetShippingStatusDto } from "../../dtos/orders/SetShippingStatusDto";
 import { CheckoutInternalGuard } from "../../services/checkoutInternalAuth/guards/CheckoutInternalGuard";
 import { OrdersService } from "../../services/orders/OrdersService";
 import type { OrderStatus } from "../../../core/entities/orders/Order";
@@ -124,6 +126,31 @@ export class OrdersController {
   @ApiResponse({ status: 201, type: OrderResponseDto })
   async resync(@Param("id") id: string): Promise<OrderResponseDto> {
     const order = await this.ordersService.resync(id);
+    return OrderResponseDto.fromEntity(order);
+  }
+
+  @Post(":id/shipping-status")
+  @ApiOperation({
+    summary:
+      "Manually set the shipping status (pending_dispatch/dispatched/shipped/cancelled)",
+  })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async setShippingStatus(
+    @Param("id") id: string,
+    @Body() body: SetShippingStatusDto,
+  ): Promise<OrderResponseDto> {
+    const order = await this.ordersService.setShippingStatus(id, body.status);
+    return OrderResponseDto.fromEntity(order);
+  }
+
+  @Post(":id/invoice-status")
+  @ApiOperation({ summary: "Manually mark an order as invoiced or not" })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async setInvoiceStatus(
+    @Param("id") id: string,
+    @Body() body: SetInvoiceStatusDto,
+  ): Promise<OrderResponseDto> {
+    const order = await this.ordersService.setInvoiceStatus(id, body.invoiced);
     return OrderResponseDto.fromEntity(order);
   }
 }

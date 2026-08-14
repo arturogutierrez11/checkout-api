@@ -26,6 +26,8 @@ import { GetOrderInteractor } from "../../../core/interactors/orders/GetOrderInt
 import { ListOrdersInteractor } from "../../../core/interactors/orders/ListOrdersInteractor";
 import { MarkOrderShippedInteractor } from "../../../core/interactors/orders/MarkOrderShippedInteractor";
 import { ResyncOrderInteractor } from "../../../core/interactors/orders/ResyncOrderInteractor";
+import { SetInvoiceStatusInteractor } from "../../../core/interactors/orders/SetInvoiceStatusInteractor";
+import { SetShippingStatusInteractor } from "../../../core/interactors/orders/SetShippingStatusInteractor";
 import { OrdersController } from "../../controllers/orders/OrdersController";
 import { CheckoutInternalGuard } from "../../services/checkoutInternalAuth/guards/CheckoutInternalGuard";
 import { OrdersService } from "../../services/orders/OrdersService";
@@ -125,6 +127,27 @@ import { OrdersService } from "../../services/orders/OrdersService";
         MERCADO_PAGO_GATEWAY,
         ApplyMercadoPagoPaymentToOrderInteractor,
       ],
+    },
+    {
+      provide: SetShippingStatusInteractor,
+      useFactory: (
+        ordersRepository: IOrdersRepository,
+        orderEventsRepository: IOrderEventsRepository,
+      ) =>
+        new SetShippingStatusInteractor(
+          ordersRepository,
+          orderEventsRepository,
+        ),
+      inject: [ORDERS_REPOSITORY, ORDER_EVENTS_REPOSITORY],
+    },
+    {
+      provide: SetInvoiceStatusInteractor,
+      useFactory: (
+        ordersRepository: IOrdersRepository,
+        orderEventsRepository: IOrderEventsRepository,
+      ) =>
+        new SetInvoiceStatusInteractor(ordersRepository, orderEventsRepository),
+      inject: [ORDERS_REPOSITORY, ORDER_EVENTS_REPOSITORY],
     },
     CheckoutInternalGuard,
     OrdersService,
