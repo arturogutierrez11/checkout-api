@@ -1,5 +1,8 @@
-/** Single internal SKU consumed once per order regardless of card quantity (every shipment uses one). */
+/** Internal SKU for the physical packaging pool: every card ships with one, so it moves 1:1 with card units. */
 export const PACKAGING_SKU = "PACKA0001";
+
+/** Internal SKU for the physical card pool. NFC0001/0002/0003 are commercial bundles of this same card. */
+export const CARDS_SKU = "TARJETA0001";
 
 export interface Product {
   id: string;
@@ -10,8 +13,10 @@ export interface Product {
   currency: string;
   stock: number;
   isActive: boolean;
-  /** True for internal-only SKUs (e.g. packaging) that aren't sold directly to customers. */
+  /** True for internal-only SKUs (cards, packaging) that aren't sold directly to customers. */
   isInternal: boolean;
+  /** How many physical cards one purchased unit of this SKU represents (e.g. the "pack of 10" bundle = 10). */
+  bundleUnits: number;
   createdAt: Date;
   updatedAt: Date;
 }

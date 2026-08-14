@@ -14,6 +14,7 @@ interface ProductRow {
   stock: number;
   isActive: boolean;
   isInternal: boolean;
+  bundleUnits: number;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -38,6 +39,7 @@ export class SQLProductsRepository implements IProductsRepository {
           stock,
           is_active as "isActive",
           is_internal as "isInternal",
+          bundle_units as "bundleUnits",
           created_at as "createdAt",
           updated_at as "updatedAt"
         from checkout_products
@@ -57,6 +59,7 @@ export class SQLProductsRepository implements IProductsRepository {
           id, slug, sku, name, price, currency, stock,
           is_active as "isActive",
           is_internal as "isInternal",
+          bundle_units as "bundleUnits",
           created_at as "createdAt",
           updated_at as "updatedAt"
         from checkout_products
@@ -75,6 +78,7 @@ export class SQLProductsRepository implements IProductsRepository {
           id, slug, sku, name, price, currency, stock,
           is_active as "isActive",
           is_internal as "isInternal",
+          bundle_units as "bundleUnits",
           created_at as "createdAt",
           updated_at as "updatedAt"
         from checkout_products
@@ -93,6 +97,7 @@ export class SQLProductsRepository implements IProductsRepository {
           id, slug, sku, name, price, currency, stock,
           is_active as "isActive",
           is_internal as "isInternal",
+          bundle_units as "bundleUnits",
           created_at as "createdAt",
           updated_at as "updatedAt"
         from checkout_products
@@ -111,6 +116,7 @@ export class SQLProductsRepository implements IProductsRepository {
           id, slug, sku, name, price, currency, stock,
           is_active as "isActive",
           is_internal as "isInternal",
+          bundle_units as "bundleUnits",
           created_at as "createdAt",
           updated_at as "updatedAt"
         from checkout_products
@@ -170,6 +176,7 @@ export class SQLProductsRepository implements IProductsRepository {
       stock: row.stock,
       isActive: row.isActive,
       isInternal: row.isInternal,
+      bundleUnits: row.bundleUnits,
       createdAt: this.toDate(row.createdAt),
       updatedAt: this.toDate(row.updatedAt),
     };

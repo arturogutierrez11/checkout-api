@@ -31,8 +31,11 @@ export class InventoryService {
     private readonly recordGiftInteractor: RecordGiftInteractor,
   ) {}
 
-  listProducts(): Promise<Product[]> {
-    return this.listAllProductsInteractor.execute();
+  async listProducts(): Promise<Product[]> {
+    const products = await this.listAllProductsInteractor.execute();
+    // Only the physical pools (cards, packaging) are inventory-tracked; the
+    // commercial bundles (tag-one/two/ten) are just price points on top.
+    return products.filter((product) => product.isInternal);
   }
 
   listMovements(

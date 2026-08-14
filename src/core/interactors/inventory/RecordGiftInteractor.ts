@@ -1,7 +1,7 @@
 import { IInventoryMovementsRepository } from "../../adapters/repositories/inventoryMovements/IInventoryMovementsRepository";
 import { IProductsRepository } from "../../adapters/repositories/products/IProductsRepository";
 import { InventoryMovement } from "../../entities/inventoryMovements/InventoryMovement";
-import { PACKAGING_SKU } from "../../entities/products/Product";
+import { CARDS_SKU, PACKAGING_SKU } from "../../entities/products/Product";
 import { InsufficientStockError } from "../orders/InsufficientStockError";
 import { ProductNotFoundError } from "../orders/ProductNotFoundError";
 
@@ -13,9 +13,10 @@ export interface RecordGiftInput {
 }
 
 /**
- * Gifts/donations are treated like a sale for stock purposes (they ship out
- * the same way, consuming one packaging unit) but never touch checkout_orders
- * — there is no payment or shipping flow to track, just the movement ledger.
+ * Gifts/donations subtract straight from physical stock, never touching
+ * checkout_orders — there is no payment or shipping flow, just the ledger.
+ * Gifting cards also consumes the matching packaging units 1:1 (every card
+ * ships with one); gifting packaging on its own does not.
  */
 export class RecordGiftInteractor {
   constructor(
@@ -42,13 +43,13 @@ export class RecordGiftInteractor {
     let packagingId: string | null = null;
     let packagingStock: number | null = null;
 
-    if (!product.isInternal) {
+    if (product.sku === CARDS_SKU) {
       const packaging = await this.productsRepository.getBySku(PACKAGING_SKU);
 
       if (packaging) {
         packagingStock = await this.productsRepository.decrementStock(
           packaging.id,
-          1,
+          input.quantity,
         );
 
         if (packagingStock === null) {
@@ -76,7 +77,7 @@ export class RecordGiftInteractor {
       await this.inventoryMovementsRepository.record({
         productId: packagingId,
         movementType: "gift",
-        quantityDelta: -1,
+        quantityDelta: -input.quantity,
         stockAfter: packagingStock,
         note: input.note ?? null,
         occurredAt: input.occurredAt,

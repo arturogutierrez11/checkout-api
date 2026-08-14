@@ -5,7 +5,7 @@ import { IProductsRepository } from "../../adapters/repositories/products/IProdu
 import { IMercadoPagoGateway } from "../../adapters/services/mercadoPago/IMercadoPagoGateway";
 import { ShippingMethod } from "../../entities/orders/Order";
 import { SHIPPING_PRICES } from "../../entities/orders/shippingPrices";
-import { PACKAGING_SKU } from "../../entities/products/Product";
+import { CARDS_SKU, PACKAGING_SKU } from "../../entities/products/Product";
 import { ReleaseOrderStockInteractor } from "../inventory/ReleaseOrderStockInteractor";
 import { InsufficientStockError } from "./InsufficientStockError";
 import { PaymentPreferenceCreationError } from "./PaymentPreferenceCreationError";
@@ -62,28 +62,39 @@ export class CreateOrderInteractor {
       throw new ProductNotFoundError(input.productSlug);
     }
 
+    const cardsProduct = await this.productsRepository.getBySku(CARDS_SKU);
+
+    if (!cardsProduct) {
+      throw new Error(`Cards product ${CARDS_SKU} not found`);
+    }
+
     const packaging = await this.productsRepository.getBySku(PACKAGING_SKU);
 
     if (!packaging) {
       throw new Error(`Packaging product ${PACKAGING_SKU} not found`);
     }
 
-    const productStock = await this.productsRepository.decrementStock(
-      product.id,
-      input.quantity,
+    // Every commercial SKU (tag-one/two/ten) is a bundle of the same physical
+    // card; each card ships with one packaging unit, so both pools move by
+    // the same amount.
+    const cardUnits = input.quantity * product.bundleUnits;
+
+    const cardsStock = await this.productsRepository.decrementStock(
+      cardsProduct.id,
+      cardUnits,
     );
 
-    if (productStock === null) {
-      throw new InsufficientStockError(product.id);
+    if (cardsStock === null) {
+      throw new InsufficientStockError(cardsProduct.id);
     }
 
     const packagingStock = await this.productsRepository.decrementStock(
       packaging.id,
-      1,
+      cardUnits,
     );
 
     if (packagingStock === null) {
-      await this.productsRepository.incrementStock(product.id, input.quantity);
+      await this.productsRepository.incrementStock(cardsProduct.id, cardUnits);
       throw new InsufficientStockError(packaging.id);
     }
 
@@ -125,24 +136,24 @@ export class CreateOrderInteractor {
       orderId = order.id;
     } catch (err) {
       await Promise.allSettled([
-        this.productsRepository.incrementStock(product.id, input.quantity),
-        this.productsRepository.incrementStock(packaging.id, 1),
+        this.productsRepository.incrementStock(cardsProduct.id, cardUnits),
+        this.productsRepository.incrementStock(packaging.id, cardUnits),
       ]);
       throw err;
     }
 
     await Promise.all([
       this.inventoryMovementsRepository.record({
-        productId: product.id,
+        productId: cardsProduct.id,
         movementType: "sale",
-        quantityDelta: -input.quantity,
-        stockAfter: productStock,
+        quantityDelta: -cardUnits,
+        stockAfter: cardsStock,
         orderId,
       }),
       this.inventoryMovementsRepository.record({
         productId: packaging.id,
         movementType: "sale",
-        quantityDelta: -1,
+        quantityDelta: -cardUnits,
         stockAfter: packagingStock,
         orderId,
       }),
