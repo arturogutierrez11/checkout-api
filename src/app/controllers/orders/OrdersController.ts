@@ -2,10 +2,12 @@ import {
   Body,
   Controller,
   Get,
+  Header,
   Headers,
   Param,
   Post,
   Query,
+  StreamableFile,
   UseGuards,
 } from "@nestjs/common";
 import {
@@ -117,6 +119,32 @@ export class OrdersController {
       labelUrl: body.labelUrl ?? null,
     });
     return OrderResponseDto.fromEntity(order);
+  }
+
+  @Post(":id/shipping-label")
+  @ApiOperation({
+    summary:
+      "Quote+create a Correo Argentino shipment via Zipnova (cheapest option) and save cost/tracking on the order",
+  })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async generateShippingLabel(
+    @Param("id") id: string,
+  ): Promise<OrderResponseDto> {
+    const order = await this.ordersService.generateShippingLabel(id);
+    return OrderResponseDto.fromEntity(order);
+  }
+
+  @Get(":id/shipping-label")
+  @ApiOperation({ summary: "Download the shipment's PDF label from Zipnova" })
+  @Header("Content-Type", "application/pdf")
+  async downloadShippingLabel(
+    @Param("id") id: string,
+  ): Promise<StreamableFile> {
+    const label = await this.ordersService.downloadShippingLabel(id);
+    return new StreamableFile(label.buffer, {
+      type: label.contentType,
+      disposition: `attachment; filename="etiqueta-${id.slice(0, 8)}.pdf"`,
+    });
   }
 
   @Post(":id/resync")

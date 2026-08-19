@@ -7,6 +7,7 @@ import {
   MarkShippedData,
   Order,
   OrderStatus,
+  SaveShipmentData,
   ShippingStatus,
   UpdateMpPaymentInfoData,
 } from "../../../../core/entities/orders/Order";
@@ -51,6 +52,8 @@ interface OrderRow {
   shippingTrackingNumber: string | null;
   shippingLabelUrl: string | null;
   shippedAt: Date | string | null;
+  shippingRealCost: string | null;
+  shippingZipnovaShipmentId: string | null;
   invoiceStatus: string | null;
   invoiceCae: string | null;
   invoiceType: string | null;
@@ -102,6 +105,8 @@ const ORDER_COLUMNS = `
   shipping_tracking_number as "shippingTrackingNumber",
   shipping_label_url as "shippingLabelUrl",
   shipped_at as "shippedAt",
+  shipping_real_cost as "shippingRealCost",
+  shipping_zipnova_shipment_id as "shippingZipnovaShipmentId",
   invoice_status as "invoiceStatus",
   invoice_cae as "invoiceCae",
   invoice_type as "invoiceType",
@@ -346,6 +351,34 @@ export class SQLOrdersRepository implements IOrdersRepository {
     return rows.length > 0;
   }
 
+  async saveShipmentDetails(
+    orderId: string,
+    data: SaveShipmentData,
+  ): Promise<boolean> {
+    const rows = await this.queryRows<{ id: string }>(
+      `
+        update checkout_orders
+        set
+          shipping_carrier = $2,
+          shipping_tracking_number = $3,
+          shipping_real_cost = $4,
+          shipping_zipnova_shipment_id = $5,
+          updated_at = now()
+        where id = $1 and shipping_zipnova_shipment_id is null
+        returning id
+      `,
+      [
+        orderId,
+        data.carrier,
+        data.trackingNumber,
+        data.realCost,
+        data.zipnovaShipmentId,
+      ],
+    );
+
+    return rows.length > 0;
+  }
+
   async setShippingStatus(
     orderId: string,
     status: ShippingStatus,
@@ -421,6 +454,9 @@ export class SQLOrdersRepository implements IOrdersRepository {
       shippingTrackingNumber: row.shippingTrackingNumber,
       shippingLabelUrl: row.shippingLabelUrl,
       shippedAt: this.toNullableDate(row.shippedAt),
+      shippingRealCost:
+        row.shippingRealCost === null ? null : Number(row.shippingRealCost),
+      shippingZipnovaShipmentId: row.shippingZipnovaShipmentId,
       invoiceStatus: row.invoiceStatus,
       invoiceCae: row.invoiceCae,
       invoiceType: row.invoiceType,

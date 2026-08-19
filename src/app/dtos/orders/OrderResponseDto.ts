@@ -51,6 +51,8 @@ export class OrderResponseDto {
   @ApiProperty({ nullable: true }) shippingTrackingNumber!: string | null;
   @ApiProperty({ nullable: true }) shippingLabelUrl!: string | null;
   @ApiProperty({ nullable: true }) shippedAt!: string | null;
+  @ApiProperty({ nullable: true }) shippingRealCost!: number | null;
+  @ApiProperty({ nullable: true }) shippingZipnovaShipmentId!: string | null;
 
   @ApiProperty({ nullable: true }) invoiceStatus!: string | null;
   @ApiProperty({ nullable: true }) invoicedAt!: string | null;
@@ -100,6 +102,8 @@ export class OrderResponseDto {
       shippingTrackingNumber: order.shippingTrackingNumber,
       shippingLabelUrl: order.shippingLabelUrl,
       shippedAt: nullableDateISOString(order.shippedAt),
+      shippingRealCost: order.shippingRealCost,
+      shippingZipnovaShipmentId: order.shippingZipnovaShipmentId,
       invoiceStatus: order.invoiceStatus,
       invoicedAt: nullableDateISOString(order.invoicedAt),
       approvedAt: nullableDateISOString(order.approvedAt),

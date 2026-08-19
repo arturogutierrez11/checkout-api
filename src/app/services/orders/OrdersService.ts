@@ -16,6 +16,8 @@ import {
   ListOrdersInteractor,
 } from "../../../core/interactors/orders/ListOrdersInteractor";
 import { CancelOrderInteractor } from "../../../core/interactors/orders/CancelOrderInteractor";
+import { DownloadShippingLabelInteractor } from "../../../core/interactors/orders/DownloadShippingLabelInteractor";
+import { GenerateShippingLabelInteractor } from "../../../core/interactors/orders/GenerateShippingLabelInteractor";
 import { MarkOrderShippedInteractor } from "../../../core/interactors/orders/MarkOrderShippedInteractor";
 import { ResyncOrderInteractor } from "../../../core/interactors/orders/ResyncOrderInteractor";
 import { ReturnOrderInteractor } from "../../../core/interactors/orders/ReturnOrderInteractor";
@@ -28,6 +30,9 @@ import { OrderNotReturnableError } from "../../../core/interactors/orders/OrderN
 import { OrderNotShippableError } from "../../../core/interactors/orders/OrderNotShippableError";
 import { PaymentPreferenceCreationError } from "../../../core/interactors/orders/PaymentPreferenceCreationError";
 import { ProductNotFoundError } from "../../../core/interactors/orders/ProductNotFoundError";
+import { ShippingLabelNotReadyError } from "../../../core/interactors/orders/ShippingLabelNotReadyError";
+import { ShippingQuoteUnavailableError } from "../../../core/interactors/orders/ShippingQuoteUnavailableError";
+import { ZipnovaLabel } from "../../../core/entities/zipnova/ZipnovaShipment";
 import {
   Order,
   MarkShippedData,
@@ -44,6 +49,8 @@ export class OrdersService {
     private readonly listOrdersInteractor: ListOrdersInteractor,
     private readonly cancelOrderInteractor: CancelOrderInteractor,
     private readonly markOrderShippedInteractor: MarkOrderShippedInteractor,
+    private readonly generateShippingLabelInteractor: GenerateShippingLabelInteractor,
+    private readonly downloadShippingLabelInteractor: DownloadShippingLabelInteractor,
     private readonly resyncOrderInteractor: ResyncOrderInteractor,
     private readonly returnOrderInteractor: ReturnOrderInteractor,
     private readonly setShippingStatusInteractor: SetShippingStatusInteractor,
@@ -144,6 +151,62 @@ export class OrdersService {
         );
       }
       throw err;
+    }
+  }
+
+  async generateShippingLabel(orderId: string): Promise<Order> {
+    try {
+      return await this.generateShippingLabelInteractor.execute(orderId);
+    } catch (err) {
+      if (err instanceof OrderNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.orderNotFound, err.message),
+        );
+      }
+      if (err instanceof OrderNotShippableError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.orderNotShippable, err.message),
+        );
+      }
+      if (err instanceof ShippingQuoteUnavailableError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.shippingQuoteUnavailable, err.message),
+        );
+      }
+      if (err instanceof ProductNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.productNotFound, err.message),
+        );
+      }
+      throw new BadGatewayException(
+        apiError(
+          ApiErrorCode.zipnovaRequestFailed,
+          err instanceof Error ? err.message : "Zipnova request failed",
+        ),
+      );
+    }
+  }
+
+  async downloadShippingLabel(orderId: string): Promise<ZipnovaLabel> {
+    try {
+      return await this.downloadShippingLabelInteractor.execute(orderId);
+    } catch (err) {
+      if (err instanceof OrderNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.orderNotFound, err.message),
+        );
+      }
+      if (err instanceof ShippingLabelNotReadyError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.shippingLabelNotReady, err.message),
+        );
+      }
+      throw new BadGatewayException(
+        apiError(
+          ApiErrorCode.zipnovaRequestFailed,
+          err instanceof Error ? err.message : "Zipnova request failed",
+        ),
+      );
     }
   }
 

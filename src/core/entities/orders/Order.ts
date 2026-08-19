@@ -55,6 +55,9 @@ export interface Order {
   shippingTrackingNumber: string | null;
   shippingLabelUrl: string | null;
   shippedAt: Date | null;
+  /** What Rituo pays Zipnova for the shipment — independent of shippingPrice, which is what the customer pays (always 0 today). */
+  shippingRealCost: number | null;
+  shippingZipnovaShipmentId: string | null;
 
   invoiceStatus: string | null;
   invoiceCae: string | null;
@@ -113,4 +116,11 @@ export interface MarkShippedData {
   carrier: string | null;
   trackingNumber: string | null;
   labelUrl: string | null;
+}
+
+export interface SaveShipmentData {
+  carrier: string;
+  trackingNumber: string | null;
+  realCost: number;
+  zipnovaShipmentId: string;
 }

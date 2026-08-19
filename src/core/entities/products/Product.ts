@@ -4,6 +4,12 @@ export const PACKAGING_SKU = "PACKA0001";
 /** Internal SKU for the physical card pool. NFC0001/0002/0003 are commercial bundles of this same card. */
 export const CARDS_SKU = "TARJETA0001";
 
+/** Physical dimensions of one packaged card as it ships — every order is N of this same unit. */
+export const CARD_WEIGHT_GRAMS = 100;
+export const CARD_LENGTH_CM = 10;
+export const CARD_WIDTH_CM = 10;
+export const CARD_HEIGHT_CM = 3;
+
 export interface Product {
   id: string;
   slug: string;

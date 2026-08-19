@@ -23,10 +23,16 @@ import {
   IOrderEmailSender,
   ORDER_EMAIL_SENDER,
 } from "../../../core/adapters/services/orderEmail/IOrderEmailSender";
+import {
+  IZipnovaGateway,
+  ZIPNOVA_GATEWAY,
+} from "../../../core/adapters/services/zipnova/IZipnovaGateway";
 import { ReleaseOrderStockInteractor } from "../../../core/interactors/inventory/ReleaseOrderStockInteractor";
 import { ApplyMercadoPagoPaymentToOrderInteractor } from "../../../core/interactors/orders/ApplyMercadoPagoPaymentToOrderInteractor";
 import { CancelOrderInteractor } from "../../../core/interactors/orders/CancelOrderInteractor";
 import { CreateOrderInteractor } from "../../../core/interactors/orders/CreateOrderInteractor";
+import { DownloadShippingLabelInteractor } from "../../../core/interactors/orders/DownloadShippingLabelInteractor";
+import { GenerateShippingLabelInteractor } from "../../../core/interactors/orders/GenerateShippingLabelInteractor";
 import { GetOrderInteractor } from "../../../core/interactors/orders/GetOrderInteractor";
 import { ListOrdersInteractor } from "../../../core/interactors/orders/ListOrdersInteractor";
 import { MarkOrderShippedInteractor } from "../../../core/interactors/orders/MarkOrderShippedInteractor";
@@ -37,6 +43,7 @@ import { SetShippingStatusInteractor } from "../../../core/interactors/orders/Se
 import { OrdersController } from "../../controllers/orders/OrdersController";
 import { CheckoutInternalGuard } from "../../services/checkoutInternalAuth/guards/CheckoutInternalGuard";
 import { OrdersService } from "../../services/orders/OrdersService";
+import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
 
 @Module({
   controllers: [OrdersController],
@@ -144,6 +151,40 @@ import { OrdersService } from "../../services/orders/OrdersService";
           orderEmailSender,
         ),
       inject: [ORDERS_REPOSITORY, ORDER_EVENTS_REPOSITORY, ORDER_EMAIL_SENDER],
+    },
+    {
+      provide: ZIPNOVA_GATEWAY,
+      useClass: ZipnovaGateway,
+    },
+    {
+      provide: GenerateShippingLabelInteractor,
+      useFactory: (
+        ordersRepository: IOrdersRepository,
+        productsRepository: IProductsRepository,
+        zipnovaGateway: IZipnovaGateway,
+        orderEventsRepository: IOrderEventsRepository,
+      ) =>
+        new GenerateShippingLabelInteractor(
+          ordersRepository,
+          productsRepository,
+          zipnovaGateway,
+          orderEventsRepository,
+        ),
+      inject: [
+        ORDERS_REPOSITORY,
+        PRODUCTS_REPOSITORY,
+        ZIPNOVA_GATEWAY,
+        ORDER_EVENTS_REPOSITORY,
+      ],
+    },
+    {
+      provide: DownloadShippingLabelInteractor,
+      useFactory: (
+        ordersRepository: IOrdersRepository,
+        zipnovaGateway: IZipnovaGateway,
+      ) =>
+        new DownloadShippingLabelInteractor(ordersRepository, zipnovaGateway),
+      inject: [ORDERS_REPOSITORY, ZIPNOVA_GATEWAY],
     },
     {
       provide: ResyncOrderInteractor,

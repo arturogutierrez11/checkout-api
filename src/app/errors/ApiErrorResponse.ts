@@ -6,6 +6,9 @@ export const ApiErrorCode = {
   orderNotCancellable: "ORDER_NOT_CANCELLABLE",
   orderNotShippable: "ORDER_NOT_SHIPPABLE",
   orderNotReturnable: "ORDER_NOT_RETURNABLE",
+  shippingQuoteUnavailable: "SHIPPING_QUOTE_UNAVAILABLE",
+  shippingLabelNotReady: "SHIPPING_LABEL_NOT_READY",
+  zipnovaRequestFailed: "ZIPNOVA_REQUEST_FAILED",
   idempotencyKeyReused: "IDEMPOTENCY_KEY_REUSED",
   invalidWebhookSignature: "INVALID_WEBHOOK_SIGNATURE",
 } as const;
