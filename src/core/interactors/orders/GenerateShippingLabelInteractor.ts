@@ -95,7 +95,8 @@ export class GenerateShippingLabelInteractor {
       serviceType: cheapest.serviceType,
       logisticType: cheapest.logisticType,
       declaredValue: order.subtotal,
-      externalId: order.id,
+      // Zipnova caps external_id at 30 chars; a UUID is 36 (32 without dashes).
+      externalId: order.id.replace(/-/g, "").slice(0, 30),
       cardUnits,
       destination: {
         name: `${order.customerFirstName} ${order.customerLastName}`,
