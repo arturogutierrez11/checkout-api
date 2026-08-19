@@ -183,14 +183,20 @@ export class ZipnovaGateway implements IZipnovaGateway {
 
   async downloadLabel(shipmentId: number): Promise<ZipnovaLabel> {
     const url = new URL(
-      `${env.zipnovaBaseUrl}/shipments/${shipmentId}/documentation/labels`,
+      `${env.zipnovaBaseUrl}/shipments/${shipmentId}/documentation`,
     );
+    url.searchParams.set("what", "label");
     url.searchParams.set("format", "pdf");
-    url.searchParams.set("output", "download");
 
     const response = await fetch(url, {
       headers: { Authorization: authHeader() },
     });
+
+    if (response.status === 409) {
+      throw new Error(
+        "La etiqueta todavía se está generando en Zipnova. Probá de nuevo en unos segundos.",
+      );
+    }
 
     if (!response.ok) {
       const detail = await response.text();
