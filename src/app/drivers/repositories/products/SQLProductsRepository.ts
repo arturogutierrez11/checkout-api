@@ -165,6 +165,26 @@ export class SQLProductsRepository implements IProductsRepository {
     return rows[0].stock;
   }
 
+  async updatePrice(productId: string, price: number): Promise<Product | null> {
+    const rows = await this.queryRows<ProductRow>(
+      `
+        update checkout_products
+        set price = $2, updated_at = now()
+        where id = $1
+        returning
+          id, slug, sku, name, price, currency, stock,
+          is_active as "isActive",
+          is_internal as "isInternal",
+          bundle_units as "bundleUnits",
+          created_at as "createdAt",
+          updated_at as "updatedAt"
+      `,
+      [productId, price],
+    );
+
+    return rows[0] ? this.mapRowToProduct(rows[0]) : null;
+  }
+
   private mapRowToProduct(row: ProductRow): Product {
     return {
       id: row.id,
