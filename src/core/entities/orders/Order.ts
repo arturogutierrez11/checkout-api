@@ -3,9 +3,9 @@ export type OrderStatus =
 
 export type ShippingMethod = "standard" | "express";
 
-/** Independent from OrderStatus (payment) — tracked manually until a real courier integration exists. */
+/** Independent from OrderStatus (payment). Auto-advances from the Zipnova status webhook. */
 export type ShippingStatus =
-  "pending_dispatch" | "dispatched" | "shipped" | "cancelled";
+  "pending_dispatch" | "dispatched" | "shipped" | "delivered" | "cancelled";
 
 export interface Order {
   id: string;
@@ -58,6 +58,8 @@ export interface Order {
   /** What Rituo pays Zipnova for the shipment — independent of shippingPrice, which is what the customer pays (always 0 today). */
   shippingRealCost: number | null;
   shippingZipnovaShipmentId: string | null;
+  /** Last raw status_code Zipnova reported via webhook (e.g. "in_transit", "out_for_delivery"). */
+  shippingZipnovaStatus: string | null;
 
   invoiceStatus: string | null;
   invoiceCae: string | null;

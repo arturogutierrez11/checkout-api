@@ -54,6 +54,7 @@ interface OrderRow {
   shippedAt: Date | string | null;
   shippingRealCost: string | null;
   shippingZipnovaShipmentId: string | null;
+  shippingZipnovaStatus: string | null;
   invoiceStatus: string | null;
   invoiceCae: string | null;
   invoiceType: string | null;
@@ -107,6 +108,7 @@ const ORDER_COLUMNS = `
   shipped_at as "shippedAt",
   shipping_real_cost as "shippingRealCost",
   shipping_zipnova_shipment_id as "shippingZipnovaShipmentId",
+  shipping_zipnova_status as "shippingZipnovaStatus",
   invoice_status as "invoiceStatus",
   invoice_cae as "invoiceCae",
   invoice_type as "invoiceType",
@@ -186,6 +188,15 @@ export class SQLOrdersRepository implements IOrdersRepository {
     const rows = await this.queryRows<OrderRow>(
       `select ${ORDER_COLUMNS} from checkout_orders where id = $1`,
       [id],
+    );
+
+    return rows[0] ? this.mapRowToOrder(rows[0]) : null;
+  }
+
+  async findByZipnovaShipmentId(shipmentId: string): Promise<Order | null> {
+    const rows = await this.queryRows<OrderRow>(
+      `select ${ORDER_COLUMNS} from checkout_orders where shipping_zipnova_shipment_id = $1`,
+      [shipmentId],
     );
 
     return rows[0] ? this.mapRowToOrder(rows[0]) : null;
@@ -386,7 +397,13 @@ export class SQLOrdersRepository implements IOrdersRepository {
     const rows = await this.queryRows<{ id: string }>(
       `
         update checkout_orders
-        set shipping_status = $2, updated_at = now()
+        set
+          shipping_status = $2,
+          shipped_at = case
+            when $2 = 'shipped' and shipped_at is null then now()
+            else shipped_at
+          end,
+          updated_at = now()
         where id = $1
         returning id
       `,
@@ -394,6 +411,20 @@ export class SQLOrdersRepository implements IOrdersRepository {
     );
 
     return rows.length > 0;
+  }
+
+  async updateZipnovaRawStatus(
+    orderId: string,
+    rawStatus: string,
+  ): Promise<void> {
+    await this.entityManager.query(
+      `
+        update checkout_orders
+        set shipping_zipnova_status = $2, updated_at = now()
+        where id = $1
+      `,
+      [orderId, rawStatus],
+    );
   }
 
   async setInvoiceStatus(orderId: string, invoiced: boolean): Promise<boolean> {
@@ -457,6 +488,7 @@ export class SQLOrdersRepository implements IOrdersRepository {
       shippingRealCost:
         row.shippingRealCost === null ? null : Number(row.shippingRealCost),
       shippingZipnovaShipmentId: row.shippingZipnovaShipmentId,
+      shippingZipnovaStatus: row.shippingZipnovaStatus,
       invoiceStatus: row.invoiceStatus,
       invoiceCae: row.invoiceCae,
       invoiceType: row.invoiceType,

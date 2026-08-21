@@ -13,6 +13,7 @@ export const ORDERS_REPOSITORY = Symbol("ORDERS_REPOSITORY");
 export interface IOrdersRepository {
   create(data: CreateOrderData): Promise<Order>;
   getById(id: string): Promise<Order | null>;
+  findByZipnovaShipmentId(shipmentId: string): Promise<Order | null>;
   list(filter: {
     status?: OrderStatus;
     limit: number;
@@ -46,8 +47,10 @@ export interface IOrdersRepository {
     orderId: string,
     data: SaveShipmentData,
   ): Promise<boolean>;
-  /** Manual status set for the simple (non-tracking) shipping states. Returns whether the order existed. */
+  /** Manual (or webhook-driven) status set. Stamps shipped_at when transitioning to 'shipped' if not already set. Returns whether the order existed. */
   setShippingStatus(orderId: string, status: ShippingStatus): Promise<boolean>;
+  /** Records the last raw status Zipnova reported, independent of the simplified shippingStatus. */
+  updateZipnovaRawStatus(orderId: string, rawStatus: string): Promise<void>;
   /** Manual invoicing flag until a real AFIP/ARCA integration exists. Returns whether the order existed. */
   setInvoiceStatus(orderId: string, invoiced: boolean): Promise<boolean>;
 }
