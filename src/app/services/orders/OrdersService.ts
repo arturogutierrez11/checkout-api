@@ -32,6 +32,7 @@ import { PaymentPreferenceCreationError } from "../../../core/interactors/orders
 import { ProductNotFoundError } from "../../../core/interactors/orders/ProductNotFoundError";
 import { ShippingLabelNotReadyError } from "../../../core/interactors/orders/ShippingLabelNotReadyError";
 import { ShippingQuoteUnavailableError } from "../../../core/interactors/orders/ShippingQuoteUnavailableError";
+import { WarehouseNotFoundError } from "../../../core/interactors/warehouses/WarehouseNotFoundError";
 import { ZipnovaLabel } from "../../../core/entities/zipnova/ZipnovaShipment";
 import {
   Order,
@@ -154,9 +155,15 @@ export class OrdersService {
     }
   }
 
-  async generateShippingLabel(orderId: string): Promise<Order> {
+  async generateShippingLabel(
+    orderId: string,
+    warehouseId: string,
+  ): Promise<Order> {
     try {
-      return await this.generateShippingLabelInteractor.execute(orderId);
+      return await this.generateShippingLabelInteractor.execute(
+        orderId,
+        warehouseId,
+      );
     } catch (err) {
       if (err instanceof OrderNotFoundError) {
         throw new NotFoundException(
@@ -166,6 +173,16 @@ export class OrdersService {
       if (err instanceof OrderNotShippableError) {
         throw new ConflictException(
           apiError(ApiErrorCode.orderNotShippable, err.message),
+        );
+      }
+      if (err instanceof WarehouseNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.warehouseNotFound, err.message),
+        );
+      }
+      if (err instanceof InsufficientStockError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.insufficientStock, err.message),
         );
       }
       if (err instanceof ShippingQuoteUnavailableError) {

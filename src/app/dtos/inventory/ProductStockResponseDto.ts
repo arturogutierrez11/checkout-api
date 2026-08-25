@@ -1,5 +1,13 @@
 import { ApiProperty } from "@nestjs/swagger";
+import { ProductWarehouseStock } from "../../../core/adapters/repositories/productStock/IProductStockRepository";
 import { Product } from "../../../core/entities/products/Product";
+
+export class ProductWarehouseStockDto {
+  @ApiProperty() warehouseId!: string;
+  @ApiProperty() warehouseSlug!: string;
+  @ApiProperty() warehouseName!: string;
+  @ApiProperty() stock!: number;
+}
 
 export class ProductStockResponseDto {
   @ApiProperty() id!: string;
@@ -11,8 +19,13 @@ export class ProductStockResponseDto {
   @ApiProperty() stock!: number;
   @ApiProperty() isActive!: boolean;
   @ApiProperty() isInternal!: boolean;
+  @ApiProperty({ type: [ProductWarehouseStockDto] })
+  stockByWarehouse!: ProductWarehouseStockDto[];
 
-  static fromEntity(product: Product): ProductStockResponseDto {
+  static fromEntity(
+    product: Product,
+    stockByWarehouse: ProductWarehouseStock[] = [],
+  ): ProductStockResponseDto {
     return {
       id: product.id,
       slug: product.slug,
@@ -23,6 +36,7 @@ export class ProductStockResponseDto {
       stock: product.stock,
       isActive: product.isActive,
       isInternal: product.isInternal,
+      stockByWarehouse,
     };
   }
 }

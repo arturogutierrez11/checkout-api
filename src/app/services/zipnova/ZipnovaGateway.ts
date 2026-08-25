@@ -7,7 +7,9 @@ import {
   CARD_WIDTH_CM,
 } from "../../../core/entities/products/Product";
 import {
+  CreateOriginAddressInput,
   CreateZipnovaShipmentInput,
+  CreatedZipnovaOriginAddress,
   CreatedZipnovaShipment,
   QuoteShipmentInput,
   ZipnovaLabel,
@@ -40,23 +42,14 @@ interface ZipnovaShipmentResponse {
 
 function requiredConfig(): {
   accountId: number;
-  originId: number;
 } {
-  if (
-    !env.zipnovaApiToken ||
-    !env.zipnovaApiSecret ||
-    !env.zipnovaAccountId ||
-    !env.zipnovaOriginId
-  ) {
+  if (!env.zipnovaApiToken || !env.zipnovaApiSecret || !env.zipnovaAccountId) {
     throw new Error(
-      "Zipnova no está configurado (faltan ZIPNOVA_API_TOKEN/API_SECRET/ACCOUNT_ID/ORIGIN_ID).",
+      "Zipnova no está configurado (faltan ZIPNOVA_API_TOKEN/API_SECRET/ACCOUNT_ID).",
     );
   }
 
-  return {
-    accountId: Number(env.zipnovaAccountId),
-    originId: Number(env.zipnovaOriginId),
-  };
+  return { accountId: Number(env.zipnovaAccountId) };
 }
 
 function buildItems(cardUnits: number) {
@@ -83,7 +76,7 @@ export class ZipnovaGateway implements IZipnovaGateway {
   async quoteShipment(
     input: QuoteShipmentInput,
   ): Promise<ZipnovaQuoteAlternative[]> {
-    const { accountId, originId } = requiredConfig();
+    const { accountId } = requiredConfig();
 
     const response = await fetch(`${env.zipnovaBaseUrl}/shipments/quote`, {
       method: "POST",
@@ -94,7 +87,7 @@ export class ZipnovaGateway implements IZipnovaGateway {
       },
       body: JSON.stringify({
         account_id: accountId,
-        origin_id: originId,
+        origin_id: input.originId,
         declared_value: input.declaredValue,
         destination: {
           city: input.destination.city,
@@ -130,7 +123,7 @@ export class ZipnovaGateway implements IZipnovaGateway {
   async createShipment(
     input: CreateZipnovaShipmentInput,
   ): Promise<CreatedZipnovaShipment> {
-    const { accountId, originId } = requiredConfig();
+    const { accountId } = requiredConfig();
 
     const response = await fetch(`${env.zipnovaBaseUrl}/shipments`, {
       method: "POST",
@@ -141,7 +134,7 @@ export class ZipnovaGateway implements IZipnovaGateway {
       },
       body: JSON.stringify({
         account_id: accountId,
-        origin_id: originId,
+        origin_id: input.originId,
         carrier_id: input.carrierId,
         logistic_type: input.logisticType,
         service_type: input.serviceType,
@@ -211,5 +204,43 @@ export class ZipnovaGateway implements IZipnovaGateway {
       buffer: Buffer.from(arrayBuffer),
       contentType: response.headers.get("content-type") ?? "application/pdf",
     };
+  }
+
+  async createOriginAddress(
+    input: CreateOriginAddressInput,
+  ): Promise<CreatedZipnovaOriginAddress> {
+    const { accountId } = requiredConfig();
+
+    const response = await fetch(`${env.zipnovaBaseUrl}/addresses`, {
+      method: "POST",
+      headers: {
+        Authorization: authHeader(),
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        account_id: accountId,
+        name: input.name,
+        street: input.street,
+        street_number: input.streetNumber,
+        city: input.city,
+        state: input.state,
+        zipcode: input.zipcode,
+        phone: input.phone,
+        email: input.email,
+        country: "AR",
+      }),
+    });
+
+    if (!response.ok) {
+      const detail = await response.text();
+      throw new Error(
+        `Zipnova rechazó la creación del depósito (${response.status}): ${detail}`,
+      );
+    }
+
+    const data = (await response.json()) as { id: number };
+
+    return { id: data.id };
   }
 }

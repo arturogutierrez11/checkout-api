@@ -11,6 +11,9 @@ export class RestockDto {
   @IsString()
   sku!: string;
 
+  @IsString()
+  warehouseId!: string;
+
   @IsInt()
   @Min(1)
   quantity!: number;

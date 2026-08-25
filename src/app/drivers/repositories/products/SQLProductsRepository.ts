@@ -26,25 +26,37 @@ export class SQLProductsRepository implements IProductsRepository {
     private readonly entityManager: EntityManager,
   ) {}
 
+  /**
+   * `stock` is no longer a stored column read directly — it's the live sum
+   * of `checkout_product_stock` across every active warehouse, joined in
+   * here so every existing call site that reads `Product.stock` keeps
+   * getting a correct cross-warehouse total without any code changes.
+   */
+  private static readonly BASE_SELECT = `
+    select
+      p.id, p.slug, p.sku, p.name, p.price, p.currency,
+      coalesce(s.total_stock, 0) as stock,
+      p.is_active as "isActive",
+      p.is_internal as "isInternal",
+      p.bundle_units as "bundleUnits",
+      p.created_at as "createdAt",
+      p.updated_at as "updatedAt"
+    from checkout_products p
+    left join (
+      select cps.product_id, sum(cps.stock) as total_stock
+      from checkout_product_stock cps
+      join checkout_warehouses w on w.id = cps.warehouse_id
+      where w.is_active = true
+      group by cps.product_id
+    ) s on s.product_id = p.id
+  `;
+
   async listActive(): Promise<Product[]> {
     const rows = await this.queryRows<ProductRow>(
       `
-        select
-          id,
-          slug,
-          sku,
-          name,
-          price,
-          currency,
-          stock,
-          is_active as "isActive",
-          is_internal as "isInternal",
-          bundle_units as "bundleUnits",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
-        from checkout_products
-        where is_active = true and is_internal = false
-        order by price asc
+        ${SQLProductsRepository.BASE_SELECT}
+        where p.is_active = true and p.is_internal = false
+        order by p.price asc
       `,
       [],
     );
@@ -55,15 +67,8 @@ export class SQLProductsRepository implements IProductsRepository {
   async listAll(): Promise<Product[]> {
     const rows = await this.queryRows<ProductRow>(
       `
-        select
-          id, slug, sku, name, price, currency, stock,
-          is_active as "isActive",
-          is_internal as "isInternal",
-          bundle_units as "bundleUnits",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
-        from checkout_products
-        order by is_internal asc, price asc
+        ${SQLProductsRepository.BASE_SELECT}
+        order by p.is_internal asc, p.price asc
       `,
       [],
     );
@@ -73,17 +78,7 @@ export class SQLProductsRepository implements IProductsRepository {
 
   async getBySlug(slug: string): Promise<Product | null> {
     const rows = await this.queryRows<ProductRow>(
-      `
-        select
-          id, slug, sku, name, price, currency, stock,
-          is_active as "isActive",
-          is_internal as "isInternal",
-          bundle_units as "bundleUnits",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
-        from checkout_products
-        where slug = $1
-      `,
+      `${SQLProductsRepository.BASE_SELECT} where p.slug = $1`,
       [slug],
     );
 
@@ -92,17 +87,7 @@ export class SQLProductsRepository implements IProductsRepository {
 
   async getBySku(sku: string): Promise<Product | null> {
     const rows = await this.queryRows<ProductRow>(
-      `
-        select
-          id, slug, sku, name, price, currency, stock,
-          is_active as "isActive",
-          is_internal as "isInternal",
-          bundle_units as "bundleUnits",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
-        from checkout_products
-        where sku = $1
-      `,
+      `${SQLProductsRepository.BASE_SELECT} where p.sku = $1`,
       [sku],
     );
 
@@ -111,78 +96,20 @@ export class SQLProductsRepository implements IProductsRepository {
 
   async getById(id: string): Promise<Product | null> {
     const rows = await this.queryRows<ProductRow>(
-      `
-        select
-          id, slug, sku, name, price, currency, stock,
-          is_active as "isActive",
-          is_internal as "isInternal",
-          bundle_units as "bundleUnits",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
-        from checkout_products
-        where id = $1
-      `,
+      `${SQLProductsRepository.BASE_SELECT} where p.id = $1`,
       [id],
     );
 
     return rows[0] ? this.mapRowToProduct(rows[0]) : null;
   }
 
-  async decrementStock(
-    productId: string,
-    quantity: number,
-  ): Promise<number | null> {
-    const rows = await this.queryRows<{ stock: number }>(
-      `
-        update checkout_products
-        set stock = stock - $2, updated_at = now()
-        where id = $1 and stock >= $2
-        returning stock
-      `,
-      [productId, quantity],
-    );
-
-    return rows[0] ? rows[0].stock : null;
-  }
-
-  async incrementStock(productId: string, quantity: number): Promise<number> {
-    const rows = await this.queryRows<{ stock: number }>(
-      `
-        update checkout_products
-        set stock = stock + $2, updated_at = now()
-        where id = $1
-        returning stock
-      `,
-      [productId, quantity],
-    );
-
-    if (!rows[0]) {
-      throw new Error(
-        `Product ${productId} not found while incrementing stock`,
-      );
-    }
-
-    return rows[0].stock;
-  }
-
   async updatePrice(productId: string, price: number): Promise<Product | null> {
-    const rows = await this.queryRows<ProductRow>(
-      `
-        update checkout_products
-        set price = $2, updated_at = now()
-        where id = $1
-        returning
-          id, slug, sku, name, price, currency, stock,
-          is_active as "isActive",
-          is_internal as "isInternal",
-          bundle_units as "bundleUnits",
-          created_at as "createdAt",
-          updated_at as "updatedAt"
-      `,
+    const rows = await this.queryRows<{ id: string }>(
+      `update checkout_products set price = $2, updated_at = now() where id = $1 returning id`,
       [productId, price],
     );
 
-    return rows[0] ? this.mapRowToProduct(rows[0]) : null;
+    return rows[0] ? this.getById(rows[0].id) : null;
   }
 
   private mapRowToProduct(row: ProductRow): Product {

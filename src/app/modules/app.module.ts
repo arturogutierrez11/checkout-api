@@ -8,6 +8,7 @@ import { OrdersModule } from "./orders/OrdersModule";
 import { InventoryModule } from "./inventory/InventoryModule";
 import { MercadoPagoWebhookModule } from "./webhooks/MercadoPagoWebhookModule";
 import { ZipnovaWebhookModule } from "./webhooks/ZipnovaWebhookModule";
+import { WarehousesModule } from "./warehouses/WarehousesModule";
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { ZipnovaWebhookModule } from "./webhooks/ZipnovaWebhookModule";
     ProductsModule,
     OrdersModule,
     InventoryModule,
+    WarehousesModule,
     MercadoPagoWebhookModule,
     ZipnovaWebhookModule,
   ],

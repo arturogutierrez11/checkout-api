@@ -8,6 +8,7 @@ export interface InventoryMovement {
   quantityDelta: number;
   stockAfter: number;
   orderId: string | null;
+  warehouseId: string | null;
   note: string | null;
   occurredAt: Date;
   createdAt: Date;
@@ -19,6 +20,7 @@ export interface RecordInventoryMovementData {
   quantityDelta: number;
   stockAfter: number;
   orderId?: string | null;
+  warehouseId?: string | null;
   note?: string | null;
   occurredAt?: Date;
 }

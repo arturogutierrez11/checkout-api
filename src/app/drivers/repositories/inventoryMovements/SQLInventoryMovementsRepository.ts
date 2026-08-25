@@ -15,6 +15,7 @@ interface InventoryMovementRow {
   quantityDelta: number;
   stockAfter: number;
   orderId: string | null;
+  warehouseId: string | null;
   note: string | null;
   occurredAt: Date | string;
   createdAt: Date | string;
@@ -27,6 +28,7 @@ const SELECT_COLUMNS = `
   quantity_delta as "quantityDelta",
   stock_after as "stockAfter",
   order_id as "orderId",
+  warehouse_id as "warehouseId",
   note,
   occurred_at as "occurredAt",
   created_at as "createdAt"
@@ -43,8 +45,8 @@ export class SQLInventoryMovementsRepository implements IInventoryMovementsRepos
     const rows = await this.queryRows<InventoryMovementRow>(
       `
         insert into checkout_inventory_movements
-          (product_id, movement_type, quantity_delta, stock_after, order_id, note, occurred_at)
-        values ($1, $2, $3, $4, $5, $6, coalesce($7, now()))
+          (product_id, movement_type, quantity_delta, stock_after, order_id, warehouse_id, note, occurred_at)
+        values ($1, $2, $3, $4, $5, $6, $7, coalesce($8, now()))
         returning ${SELECT_COLUMNS}
       `,
       [
@@ -53,6 +55,7 @@ export class SQLInventoryMovementsRepository implements IInventoryMovementsRepos
         data.quantityDelta,
         data.stockAfter,
         data.orderId ?? null,
+        data.warehouseId ?? null,
         data.note ?? null,
         data.occurredAt ?? null,
       ],
@@ -116,6 +119,7 @@ export class SQLInventoryMovementsRepository implements IInventoryMovementsRepos
       quantityDelta: row.quantityDelta,
       stockAfter: row.stockAfter,
       orderId: row.orderId,
+      warehouseId: row.warehouseId,
       note: row.note,
       occurredAt: this.toDate(row.occurredAt),
       createdAt: this.toDate(row.createdAt),

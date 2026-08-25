@@ -4,10 +4,19 @@ import {
   INVENTORY_MOVEMENTS_REPOSITORY,
 } from "../../../core/adapters/repositories/inventoryMovements/IInventoryMovementsRepository";
 import {
+  IProductStockRepository,
+  PRODUCT_STOCK_REPOSITORY,
+} from "../../../core/adapters/repositories/productStock/IProductStockRepository";
+import {
   IProductsRepository,
   PRODUCTS_REPOSITORY,
 } from "../../../core/adapters/repositories/products/IProductsRepository";
+import {
+  IWarehousesRepository,
+  WAREHOUSES_REPOSITORY,
+} from "../../../core/adapters/repositories/warehouses/IWarehousesRepository";
 import { ListInventoryMovementsInteractor } from "../../../core/interactors/inventory/ListInventoryMovementsInteractor";
+import { ListProductStockByWarehouseInteractor } from "../../../core/interactors/inventory/ListProductStockByWarehouseInteractor";
 import { RecordGiftInteractor } from "../../../core/interactors/inventory/RecordGiftInteractor";
 import { RestockProductInteractor } from "../../../core/interactors/inventory/RestockProductInteractor";
 import { ListAllProductsInteractor } from "../../../core/interactors/products/ListAllProductsInteractor";
@@ -32,28 +41,52 @@ import { InventoryService } from "../../services/inventory/InventoryService";
       inject: [INVENTORY_MOVEMENTS_REPOSITORY],
     },
     {
+      provide: ListProductStockByWarehouseInteractor,
+      useFactory: (productStockRepository: IProductStockRepository) =>
+        new ListProductStockByWarehouseInteractor(productStockRepository),
+      inject: [PRODUCT_STOCK_REPOSITORY],
+    },
+    {
       provide: RestockProductInteractor,
       useFactory: (
         productsRepository: IProductsRepository,
+        productStockRepository: IProductStockRepository,
+        warehousesRepository: IWarehousesRepository,
         inventoryMovementsRepository: IInventoryMovementsRepository,
       ) =>
         new RestockProductInteractor(
           productsRepository,
+          productStockRepository,
+          warehousesRepository,
           inventoryMovementsRepository,
         ),
-      inject: [PRODUCTS_REPOSITORY, INVENTORY_MOVEMENTS_REPOSITORY],
+      inject: [
+        PRODUCTS_REPOSITORY,
+        PRODUCT_STOCK_REPOSITORY,
+        WAREHOUSES_REPOSITORY,
+        INVENTORY_MOVEMENTS_REPOSITORY,
+      ],
     },
     {
       provide: RecordGiftInteractor,
       useFactory: (
         productsRepository: IProductsRepository,
+        productStockRepository: IProductStockRepository,
+        warehousesRepository: IWarehousesRepository,
         inventoryMovementsRepository: IInventoryMovementsRepository,
       ) =>
         new RecordGiftInteractor(
           productsRepository,
+          productStockRepository,
+          warehousesRepository,
           inventoryMovementsRepository,
         ),
-      inject: [PRODUCTS_REPOSITORY, INVENTORY_MOVEMENTS_REPOSITORY],
+      inject: [
+        PRODUCTS_REPOSITORY,
+        PRODUCT_STOCK_REPOSITORY,
+        WAREHOUSES_REPOSITORY,
+        INVENTORY_MOVEMENTS_REPOSITORY,
+      ],
     },
     CheckoutInternalGuard,
     InventoryService,

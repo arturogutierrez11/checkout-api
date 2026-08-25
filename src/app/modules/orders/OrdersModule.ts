@@ -12,9 +12,17 @@ import {
   ORDERS_REPOSITORY,
 } from "../../../core/adapters/repositories/orders/IOrdersRepository";
 import {
+  IProductStockRepository,
+  PRODUCT_STOCK_REPOSITORY,
+} from "../../../core/adapters/repositories/productStock/IProductStockRepository";
+import {
   IProductsRepository,
   PRODUCTS_REPOSITORY,
 } from "../../../core/adapters/repositories/products/IProductsRepository";
+import {
+  IWarehousesRepository,
+  WAREHOUSES_REPOSITORY,
+} from "../../../core/adapters/repositories/warehouses/IWarehousesRepository";
 import {
   IMercadoPagoGateway,
   MERCADO_PAGO_GATEWAY,
@@ -51,14 +59,14 @@ import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
     {
       provide: ReleaseOrderStockInteractor,
       useFactory: (
-        productsRepository: IProductsRepository,
         inventoryMovementsRepository: IInventoryMovementsRepository,
+        productStockRepository: IProductStockRepository,
       ) =>
         new ReleaseOrderStockInteractor(
-          productsRepository,
           inventoryMovementsRepository,
+          productStockRepository,
         ),
-      inject: [PRODUCTS_REPOSITORY, INVENTORY_MOVEMENTS_REPOSITORY],
+      inject: [INVENTORY_MOVEMENTS_REPOSITORY, PRODUCT_STOCK_REPOSITORY],
     },
     {
       provide: ApplyMercadoPagoPaymentToOrderInteractor,
@@ -85,26 +93,23 @@ import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
       provide: CreateOrderInteractor,
       useFactory: (
         productsRepository: IProductsRepository,
+        productStockRepository: IProductStockRepository,
         ordersRepository: IOrdersRepository,
         orderEventsRepository: IOrderEventsRepository,
-        inventoryMovementsRepository: IInventoryMovementsRepository,
-        releaseOrderStockInteractor: ReleaseOrderStockInteractor,
         mercadoPagoGateway: IMercadoPagoGateway,
       ) =>
         new CreateOrderInteractor(
           productsRepository,
+          productStockRepository,
           ordersRepository,
           orderEventsRepository,
-          inventoryMovementsRepository,
-          releaseOrderStockInteractor,
           mercadoPagoGateway,
         ),
       inject: [
         PRODUCTS_REPOSITORY,
+        PRODUCT_STOCK_REPOSITORY,
         ORDERS_REPOSITORY,
         ORDER_EVENTS_REPOSITORY,
-        INVENTORY_MOVEMENTS_REPOSITORY,
-        ReleaseOrderStockInteractor,
         MERCADO_PAGO_GATEWAY,
       ],
     },
@@ -161,18 +166,27 @@ import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
       useFactory: (
         ordersRepository: IOrdersRepository,
         productsRepository: IProductsRepository,
+        productStockRepository: IProductStockRepository,
+        warehousesRepository: IWarehousesRepository,
+        inventoryMovementsRepository: IInventoryMovementsRepository,
         zipnovaGateway: IZipnovaGateway,
         orderEventsRepository: IOrderEventsRepository,
       ) =>
         new GenerateShippingLabelInteractor(
           ordersRepository,
           productsRepository,
+          productStockRepository,
+          warehousesRepository,
+          inventoryMovementsRepository,
           zipnovaGateway,
           orderEventsRepository,
         ),
       inject: [
         ORDERS_REPOSITORY,
         PRODUCTS_REPOSITORY,
+        PRODUCT_STOCK_REPOSITORY,
+        WAREHOUSES_REPOSITORY,
+        INVENTORY_MOVEMENTS_REPOSITORY,
         ZIPNOVA_GATEWAY,
         ORDER_EVENTS_REPOSITORY,
       ],

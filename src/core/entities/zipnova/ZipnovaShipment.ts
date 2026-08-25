@@ -11,6 +11,7 @@ export interface ZipnovaDestination {
 }
 
 export interface QuoteShipmentInput {
+  originId: number;
   declaredValue: number;
   cardUnits: number;
   destination: {
@@ -31,6 +32,7 @@ export interface ZipnovaQuoteAlternative {
 }
 
 export interface CreateZipnovaShipmentInput {
+  originId: number;
   carrierId: number;
   serviceType: string;
   logisticType: string;
@@ -49,4 +51,19 @@ export interface CreatedZipnovaShipment {
 export interface ZipnovaLabel {
   buffer: Buffer;
   contentType: string;
+}
+
+export interface CreateOriginAddressInput {
+  name: string;
+  street: string;
+  streetNumber: string;
+  city: string;
+  state: string;
+  zipcode: string;
+  phone: string;
+  email: string;
+}
+
+export interface CreatedZipnovaOriginAddress {
+  id: number;
 }

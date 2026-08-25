@@ -12,9 +12,9 @@ import {
   IOrdersRepository,
 } from "../../../core/adapters/repositories/orders/IOrdersRepository";
 import {
-  PRODUCTS_REPOSITORY,
-  IProductsRepository,
-} from "../../../core/adapters/repositories/products/IProductsRepository";
+  PRODUCT_STOCK_REPOSITORY,
+  IProductStockRepository,
+} from "../../../core/adapters/repositories/productStock/IProductStockRepository";
 import {
   MERCADO_PAGO_GATEWAY,
   IMercadoPagoGateway,
@@ -35,14 +35,14 @@ import { MercadoPagoWebhookService } from "../../services/webhooks/MercadoPagoWe
     {
       provide: ReleaseOrderStockInteractor,
       useFactory: (
-        productsRepository: IProductsRepository,
         inventoryMovementsRepository: IInventoryMovementsRepository,
+        productStockRepository: IProductStockRepository,
       ) =>
         new ReleaseOrderStockInteractor(
-          productsRepository,
           inventoryMovementsRepository,
+          productStockRepository,
         ),
-      inject: [PRODUCTS_REPOSITORY, INVENTORY_MOVEMENTS_REPOSITORY],
+      inject: [INVENTORY_MOVEMENTS_REPOSITORY, PRODUCT_STOCK_REPOSITORY],
     },
     {
       provide: ApplyMercadoPagoPaymentToOrderInteractor,

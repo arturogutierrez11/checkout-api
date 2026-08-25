@@ -5,10 +5,12 @@ import {
 } from "@nestjs/common";
 import { InsufficientStockError } from "../../../core/interactors/orders/InsufficientStockError";
 import { ProductNotFoundError } from "../../../core/interactors/orders/ProductNotFoundError";
+import { WarehouseNotFoundError } from "../../../core/interactors/warehouses/WarehouseNotFoundError";
 import {
   ListInventoryMovementsFilter,
   ListInventoryMovementsInteractor,
 } from "../../../core/interactors/inventory/ListInventoryMovementsInteractor";
+import { ListProductStockByWarehouseInteractor } from "../../../core/interactors/inventory/ListProductStockByWarehouseInteractor";
 import {
   RecordGiftInput,
   RecordGiftInteractor,
@@ -18,24 +20,39 @@ import {
   RestockProductInteractor,
 } from "../../../core/interactors/inventory/RestockProductInteractor";
 import { ListAllProductsInteractor } from "../../../core/interactors/products/ListAllProductsInteractor";
+import { ProductWarehouseStock } from "../../../core/adapters/repositories/productStock/IProductStockRepository";
 import { InventoryMovement } from "../../../core/entities/inventoryMovements/InventoryMovement";
 import { Product } from "../../../core/entities/products/Product";
 import { ApiErrorCode, apiError } from "../../errors/ApiErrorResponse";
+
+export interface ProductWithStockByWarehouse {
+  product: Product;
+  stockByWarehouse: ProductWarehouseStock[];
+}
 
 @Injectable()
 export class InventoryService {
   constructor(
     private readonly listAllProductsInteractor: ListAllProductsInteractor,
     private readonly listInventoryMovementsInteractor: ListInventoryMovementsInteractor,
+    private readonly listProductStockByWarehouseInteractor: ListProductStockByWarehouseInteractor,
     private readonly restockProductInteractor: RestockProductInteractor,
     private readonly recordGiftInteractor: RecordGiftInteractor,
   ) {}
 
-  async listProducts(): Promise<Product[]> {
+  async listProducts(): Promise<ProductWithStockByWarehouse[]> {
     const products = await this.listAllProductsInteractor.execute();
     // Only the physical pools (cards, packaging) are inventory-tracked; the
     // commercial bundles (tag-one/two/ten) are just price points on top.
-    return products.filter((product) => product.isInternal);
+    const internalProducts = products.filter((product) => product.isInternal);
+
+    return Promise.all(
+      internalProducts.map(async (product) => ({
+        product,
+        stockByWarehouse:
+          await this.listProductStockByWarehouseInteractor.execute(product.id),
+      })),
+    );
   }
 
   listMovements(
@@ -51,6 +68,11 @@ export class InventoryService {
       if (err instanceof ProductNotFoundError) {
         throw new NotFoundException(
           apiError(ApiErrorCode.productNotFound, err.message),
+        );
+      }
+      if (err instanceof WarehouseNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.warehouseNotFound, err.message),
         );
       }
       throw err;
@@ -69,6 +91,11 @@ export class InventoryService {
       if (err instanceof InsufficientStockError) {
         throw new ConflictException(
           apiError(ApiErrorCode.insufficientStock, err.message),
+        );
+      }
+      if (err instanceof WarehouseNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.warehouseNotFound, err.message),
         );
       }
       throw err;

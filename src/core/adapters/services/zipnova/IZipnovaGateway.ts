@@ -1,5 +1,7 @@
 import {
+  CreateOriginAddressInput,
   CreateZipnovaShipmentInput,
+  CreatedZipnovaOriginAddress,
   CreatedZipnovaShipment,
   QuoteShipmentInput,
   ZipnovaLabel,
@@ -14,4 +16,7 @@ export interface IZipnovaGateway {
     input: CreateZipnovaShipmentInput,
   ): Promise<CreatedZipnovaShipment>;
   downloadLabel(shipmentId: number): Promise<ZipnovaLabel>;
+  createOriginAddress(
+    input: CreateOriginAddressInput,
+  ): Promise<CreatedZipnovaOriginAddress>;
 }

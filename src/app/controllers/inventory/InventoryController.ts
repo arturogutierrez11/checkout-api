@@ -27,13 +27,14 @@ export class InventoryController {
 
   @Get("products")
   @ApiOperation({
-    summary: "List every SKU (including internal ones) with its exact stock",
+    summary:
+      "List every SKU (including internal ones) with its stock broken down by warehouse",
   })
   @ApiResponse({ status: 200, type: [ProductStockResponseDto] })
   async listProducts(): Promise<ProductStockResponseDto[]> {
     const products = await this.inventoryService.listProducts();
-    return products.map((product) =>
-      ProductStockResponseDto.fromEntity(product),
+    return products.map(({ product, stockByWarehouse }) =>
+      ProductStockResponseDto.fromEntity(product, stockByWarehouse),
     );
   }
 
@@ -68,6 +69,7 @@ export class InventoryController {
   ): Promise<InventoryMovementResponseDto> {
     const movement = await this.inventoryService.restock({
       sku: body.sku,
+      warehouseId: body.warehouseId,
       quantity: body.quantity,
       note: body.note ?? null,
       occurredAt: body.occurredAt ? new Date(body.occurredAt) : undefined,
@@ -86,6 +88,7 @@ export class InventoryController {
   ): Promise<InventoryMovementResponseDto> {
     const movement = await this.inventoryService.recordGift({
       sku: body.sku,
+      warehouseId: body.warehouseId,
       quantity: body.quantity,
       occurredAt: new Date(body.occurredAt),
       note: body.note ?? null,

@@ -19,6 +19,7 @@ import {
 } from "@nestjs/swagger";
 import { CreateOrderDto } from "../../dtos/orders/CreateOrderDto";
 import { CreateOrderResponseDto } from "../../dtos/orders/CreateOrderResponseDto";
+import { GenerateShippingLabelDto } from "../../dtos/orders/GenerateShippingLabelDto";
 import { MarkOrderShippedDto } from "../../dtos/orders/MarkOrderShippedDto";
 import { OrderResponseDto } from "../../dtos/orders/OrderResponseDto";
 import { ReturnOrderDto } from "../../dtos/orders/ReturnOrderDto";
@@ -124,13 +125,17 @@ export class OrdersController {
   @Post(":id/shipping-label")
   @ApiOperation({
     summary:
-      "Quote+create a Correo Argentino shipment via Zipnova (cheapest option) and save cost/tracking on the order",
+      "Reserve stock at the given warehouse, then quote+create a Correo Argentino shipment via Zipnova (cheapest option) from that warehouse's origin",
   })
   @ApiResponse({ status: 201, type: OrderResponseDto })
   async generateShippingLabel(
     @Param("id") id: string,
+    @Body() body: GenerateShippingLabelDto,
   ): Promise<OrderResponseDto> {
-    const order = await this.ordersService.generateShippingLabel(id);
+    const order = await this.ordersService.generateShippingLabel(
+      id,
+      body.warehouseId,
+    );
     return OrderResponseDto.fromEntity(order);
   }
 
