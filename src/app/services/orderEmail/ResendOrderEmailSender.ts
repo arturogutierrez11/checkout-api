@@ -130,10 +130,15 @@ export class ResendOrderEmailSender implements IOrderEmailSender {
       { label: "Dirección", value: escapeHtml(addressLine) },
       { label: "Total pagado", value: total },
       { label: "N° de orden", value: escapeHtml(order.id) },
-      {
-        label: "N° de pago Mercado Pago",
-        value: escapeHtml(order.mpPaymentId ?? "—"),
-      },
+      order.salesChannel === "manual"
+        ? {
+            label: "Medio de pago",
+            value: escapeHtml(order.manualPaymentMethod ?? "—"),
+          }
+        : {
+            label: "N° de pago Mercado Pago",
+            value: escapeHtml(order.mpPaymentId ?? "—"),
+          },
     ];
 
     await Promise.all([
@@ -158,7 +163,7 @@ export class ResendOrderEmailSender implements IOrderEmailSender {
         to: [env.resendOrdersNotifyTo],
         reply_to: order.customerEmail,
         subject: `[Pedido pago] ${order.productName} — ${order.customerFirstName} ${order.customerLastName}`,
-        text: `Nuevo pedido pago.\n\nCliente: ${order.customerFirstName} ${order.customerLastName} (${order.customerEmail}, ${order.customerPhone})\n\n${order.productName} x${order.quantity}\n${shippingLabel}\nDirección: ${addressLine}\nTotal: ${total}\nOrden: ${order.id}\nPago MP: ${order.mpPaymentId ?? ""}`,
+        text: `Nuevo pedido pago${order.salesChannel === "manual" ? " (venta manual)" : ""}.\n\nCliente: ${order.customerFirstName} ${order.customerLastName} (${order.customerEmail}, ${order.customerPhone})\n\n${order.productName} x${order.quantity}\n${shippingLabel}\nDirección: ${addressLine}\nTotal: ${total}\nOrden: ${order.id}\n${order.salesChannel === "manual" ? `Medio de pago: ${order.manualPaymentMethod ?? ""}` : `Pago MP: ${order.mpPaymentId ?? ""}`}`,
         html: emailShell({
           preheader: `Nuevo pedido pago de ${order.customerFirstName} ${order.customerLastName} — ${total}`,
           eyebrow: "Panel interno",

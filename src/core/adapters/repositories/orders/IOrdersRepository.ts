@@ -1,4 +1,5 @@
 import {
+  CreateManualOrderData,
   CreateOrderData,
   MarkShippedData,
   Order,
@@ -12,6 +13,8 @@ export const ORDERS_REPOSITORY = Symbol("ORDERS_REPOSITORY");
 
 export interface IOrdersRepository {
   create(data: CreateOrderData): Promise<Order>;
+  /** Inserted already 'approved' (payment happened outside the system). */
+  createManual(data: CreateManualOrderData): Promise<Order>;
   getById(id: string): Promise<Order | null>;
   findByZipnovaShipmentId(shipmentId: string): Promise<Order | null>;
   list(filter: {

@@ -17,6 +17,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
+import { CreateManualOrderDto } from "../../dtos/orders/CreateManualOrderDto";
 import { CreateOrderDto } from "../../dtos/orders/CreateOrderDto";
 import { CreateOrderResponseDto } from "../../dtos/orders/CreateOrderResponseDto";
 import { GenerateShippingLabelDto } from "../../dtos/orders/GenerateShippingLabelDto";
@@ -72,6 +73,39 @@ export class OrdersController {
     );
 
     return result;
+  }
+
+  @Post("manual")
+  @ApiOperation({
+    summary:
+      "Register a sale paid outside Mercado Pago (cash, transfer, etc.) — created already approved",
+  })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async createManual(
+    @Body() body: CreateManualOrderDto,
+  ): Promise<OrderResponseDto> {
+    const order = await this.ordersService.createManual({
+      productSlug: body.productSlug,
+      quantity: body.quantity,
+      shippingMethod: body.shippingMethod,
+      customer: body.customer,
+      shippingAddress: body.shippingAddress,
+      billing: {
+        dni: body.billing.dni,
+        useShippingAddress: body.billing.useShippingAddress,
+        address: body.billing.address ?? null,
+        city: body.billing.city ?? null,
+        province: body.billing.province ?? null,
+        postalCode: body.billing.postalCode ?? null,
+        isBusinessPurchase: body.billing.isBusinessPurchase,
+        cuit: body.billing.cuit ?? null,
+        businessName: body.billing.businessName ?? null,
+      },
+      manualPaymentMethod: body.manualPaymentMethod,
+      manualPaymentNote: body.manualPaymentNote ?? null,
+    });
+
+    return OrderResponseDto.fromEntity(order);
   }
 
   @Get(":id")

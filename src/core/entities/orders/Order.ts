@@ -1,6 +1,8 @@
 export type OrderStatus =
   "pending" | "approved" | "rejected" | "cancelled" | "payment_init_failed";
 
+export type SalesChannel = "mercadopago" | "manual";
+
 export type ShippingMethod = "standard" | "express";
 
 /** Independent from OrderStatus (payment). Auto-advances from the Zipnova status webhook. */
@@ -49,6 +51,10 @@ export interface Order {
   mpPaymentId: string | null;
   mpPaymentStatus: string | null;
   mpPaymentStatusDetail: string | null;
+
+  salesChannel: SalesChannel;
+  manualPaymentMethod: string | null;
+  manualPaymentNote: string | null;
 
   shippingStatus: ShippingStatus;
   shippingCarrier: string | null;
@@ -106,6 +112,11 @@ export interface CreateOrderData {
   isBusinessPurchase: boolean;
   billingCuit: string | null;
   billingBusinessName: string | null;
+}
+
+export interface CreateManualOrderData extends CreateOrderData {
+  manualPaymentMethod: string;
+  manualPaymentNote: string | null;
 }
 
 export interface UpdateMpPaymentInfoData {

@@ -10,6 +10,10 @@ import {
   CreateOrderInteractor,
   CreateOrderResult,
 } from "../../../core/interactors/orders/CreateOrderInteractor";
+import {
+  CreateManualOrderInput,
+  CreateManualOrderInteractor,
+} from "../../../core/interactors/orders/CreateManualOrderInteractor";
 import { GetOrderInteractor } from "../../../core/interactors/orders/GetOrderInteractor";
 import {
   ListOrdersFilter,
@@ -46,6 +50,7 @@ import { IdempotencyService } from "../idempotency/IdempotencyService";
 export class OrdersService {
   constructor(
     private readonly createOrderInteractor: CreateOrderInteractor,
+    private readonly createManualOrderInteractor: CreateManualOrderInteractor,
     private readonly getOrderInteractor: GetOrderInteractor,
     private readonly listOrdersInteractor: ListOrdersInteractor,
     private readonly cancelOrderInteractor: CancelOrderInteractor,
@@ -96,6 +101,24 @@ export class OrdersService {
       if (err instanceof PaymentPreferenceCreationError) {
         throw new BadGatewayException(
           apiError(ApiErrorCode.paymentPreferenceCreationFailed, err.message),
+        );
+      }
+      throw err;
+    }
+  }
+
+  async createManual(input: CreateManualOrderInput): Promise<Order> {
+    try {
+      return await this.createManualOrderInteractor.execute(input);
+    } catch (err) {
+      if (err instanceof ProductNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.productNotFound, err.message),
+        );
+      }
+      if (err instanceof InsufficientStockError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.insufficientStock, err.message),
         );
       }
       throw err;

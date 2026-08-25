@@ -46,6 +46,10 @@ export class OrderResponseDto {
   @ApiProperty({ nullable: true }) mpPaymentStatus!: string | null;
   @ApiProperty({ nullable: true }) mpPaymentStatusDetail!: string | null;
 
+  @ApiProperty() salesChannel!: string;
+  @ApiProperty({ nullable: true }) manualPaymentMethod!: string | null;
+  @ApiProperty({ nullable: true }) manualPaymentNote!: string | null;
+
   @ApiProperty() shippingStatus!: string;
   @ApiProperty({ nullable: true }) shippingCarrier!: string | null;
   @ApiProperty({ nullable: true }) shippingTrackingNumber!: string | null;
@@ -98,6 +102,9 @@ export class OrderResponseDto {
       mpPaymentId: order.mpPaymentId,
       mpPaymentStatus: order.mpPaymentStatus,
       mpPaymentStatusDetail: order.mpPaymentStatusDetail,
+      salesChannel: order.salesChannel,
+      manualPaymentMethod: order.manualPaymentMethod,
+      manualPaymentNote: order.manualPaymentNote,
       shippingStatus: order.shippingStatus,
       shippingCarrier: order.shippingCarrier,
       shippingTrackingNumber: order.shippingTrackingNumber,

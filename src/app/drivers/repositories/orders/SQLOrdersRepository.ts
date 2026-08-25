@@ -3,6 +3,7 @@ import { InjectEntityManager } from "@nestjs/typeorm";
 import { EntityManager } from "typeorm";
 import { IOrdersRepository } from "../../../../core/adapters/repositories/orders/IOrdersRepository";
 import {
+  CreateManualOrderData,
   CreateOrderData,
   MarkShippedData,
   Order,
@@ -47,6 +48,9 @@ interface OrderRow {
   mpPaymentId: string | null;
   mpPaymentStatus: string | null;
   mpPaymentStatusDetail: string | null;
+  salesChannel: string;
+  manualPaymentMethod: string | null;
+  manualPaymentNote: string | null;
   shippingStatus: string;
   shippingCarrier: string | null;
   shippingTrackingNumber: string | null;
@@ -101,6 +105,9 @@ const ORDER_COLUMNS = `
   mp_payment_id as "mpPaymentId",
   mp_payment_status as "mpPaymentStatus",
   mp_payment_status_detail as "mpPaymentStatusDetail",
+  sales_channel as "salesChannel",
+  manual_payment_method as "manualPaymentMethod",
+  manual_payment_note as "manualPaymentNote",
   shipping_status as "shippingStatus",
   shipping_carrier as "shippingCarrier",
   shipping_tracking_number as "shippingTrackingNumber",
@@ -178,6 +185,67 @@ export class SQLOrdersRepository implements IOrdersRepository {
         data.isBusinessPurchase,
         data.billingCuit,
         data.billingBusinessName,
+      ],
+    );
+
+    return this.mapRowToOrder(rows[0]);
+  }
+
+  async createManual(data: CreateManualOrderData): Promise<Order> {
+    const rows = await this.queryRows<OrderRow>(
+      `
+        insert into checkout_orders (
+          product_id, product_sku, product_name, unit_price, quantity, currency, subtotal,
+          shipping_method, shipping_price, total,
+          customer_first_name, customer_last_name, customer_email, customer_phone,
+          shipping_address, shipping_city, shipping_province, shipping_postal_code,
+          billing_dni, billing_use_shipping_address, billing_address, billing_city,
+          billing_province, billing_postal_code, is_business_purchase, billing_cuit,
+          billing_business_name, status, sales_channel, manual_payment_method,
+          manual_payment_note, approved_at
+        )
+        values (
+          $1, $2, $3, $4, $5, $6, $7,
+          $8, $9, $10,
+          $11, $12, $13, $14,
+          $15, $16, $17, $18,
+          $19, $20, $21, $22,
+          $23, $24, $25, $26,
+          $27, 'approved', 'manual', $28,
+          $29, now()
+        )
+        returning ${ORDER_COLUMNS}
+      `,
+      [
+        data.productId,
+        data.productSku,
+        data.productName,
+        data.unitPrice,
+        data.quantity,
+        data.currency,
+        data.subtotal,
+        data.shippingMethod,
+        data.shippingPrice,
+        data.total,
+        data.customerFirstName,
+        data.customerLastName,
+        data.customerEmail,
+        data.customerPhone,
+        data.shippingAddress,
+        data.shippingCity,
+        data.shippingProvince,
+        data.shippingPostalCode,
+        data.billingDni,
+        data.billingUseShippingAddress,
+        data.billingAddress,
+        data.billingCity,
+        data.billingProvince,
+        data.billingPostalCode,
+        data.isBusinessPurchase,
+        data.billingCuit,
+        data.billingBusinessName,
+        data.manualPaymentMethod,
+        data.manualPaymentNote,
       ],
     );
 
@@ -480,6 +548,9 @@ export class SQLOrdersRepository implements IOrdersRepository {
       mpPaymentId: row.mpPaymentId,
       mpPaymentStatus: row.mpPaymentStatus,
       mpPaymentStatusDetail: row.mpPaymentStatusDetail,
+      salesChannel: row.salesChannel as Order["salesChannel"],
+      manualPaymentMethod: row.manualPaymentMethod,
+      manualPaymentNote: row.manualPaymentNote,
       shippingStatus: row.shippingStatus as Order["shippingStatus"],
       shippingCarrier: row.shippingCarrier,
       shippingTrackingNumber: row.shippingTrackingNumber,

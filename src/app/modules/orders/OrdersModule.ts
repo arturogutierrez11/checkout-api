@@ -38,6 +38,7 @@ import {
 import { ReleaseOrderStockInteractor } from "../../../core/interactors/inventory/ReleaseOrderStockInteractor";
 import { ApplyMercadoPagoPaymentToOrderInteractor } from "../../../core/interactors/orders/ApplyMercadoPagoPaymentToOrderInteractor";
 import { CancelOrderInteractor } from "../../../core/interactors/orders/CancelOrderInteractor";
+import { CreateManualOrderInteractor } from "../../../core/interactors/orders/CreateManualOrderInteractor";
 import { CreateOrderInteractor } from "../../../core/interactors/orders/CreateOrderInteractor";
 import { DownloadShippingLabelInteractor } from "../../../core/interactors/orders/DownloadShippingLabelInteractor";
 import { GenerateShippingLabelInteractor } from "../../../core/interactors/orders/GenerateShippingLabelInteractor";
@@ -111,6 +112,30 @@ import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
         ORDERS_REPOSITORY,
         ORDER_EVENTS_REPOSITORY,
         MERCADO_PAGO_GATEWAY,
+      ],
+    },
+    {
+      provide: CreateManualOrderInteractor,
+      useFactory: (
+        productsRepository: IProductsRepository,
+        productStockRepository: IProductStockRepository,
+        ordersRepository: IOrdersRepository,
+        orderEventsRepository: IOrderEventsRepository,
+        orderEmailSender: IOrderEmailSender,
+      ) =>
+        new CreateManualOrderInteractor(
+          productsRepository,
+          productStockRepository,
+          ordersRepository,
+          orderEventsRepository,
+          orderEmailSender,
+        ),
+      inject: [
+        PRODUCTS_REPOSITORY,
+        PRODUCT_STOCK_REPOSITORY,
+        ORDERS_REPOSITORY,
+        ORDER_EVENTS_REPOSITORY,
+        ORDER_EMAIL_SENDER,
       ],
     },
     {
