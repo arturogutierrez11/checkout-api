@@ -35,7 +35,9 @@ export class SQLProductsRepository implements IProductsRepository {
   private static readonly BASE_SELECT = `
     select
       p.id, p.slug, p.sku, p.name, p.price, p.currency,
-      coalesce(s.total_stock, 0) as stock,
+      -- sum() over int returns bigint, which node-postgres returns as a
+      -- string — cast back to int so callers get a real number.
+      coalesce(s.total_stock, 0)::int as stock,
       p.is_active as "isActive",
       p.is_internal as "isInternal",
       p.bundle_units as "bundleUnits",
