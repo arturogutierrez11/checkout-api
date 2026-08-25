@@ -7,6 +7,11 @@ export class CreateWarehouseDto {
   name!: string;
 
   @IsString()
+  @MinLength(6)
+  @MaxLength(20)
+  document!: string;
+
+  @IsString()
   @MinLength(2)
   @MaxLength(200)
   addressStreet!: string;

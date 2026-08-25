@@ -221,6 +221,7 @@ export class ZipnovaGateway implements IZipnovaGateway {
       body: JSON.stringify({
         account_id: accountId,
         name: input.name,
+        document: input.document,
         street: input.street,
         street_number: input.streetNumber,
         city: input.city,

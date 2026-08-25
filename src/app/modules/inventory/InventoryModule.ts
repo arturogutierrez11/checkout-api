@@ -15,6 +15,7 @@ import {
   IWarehousesRepository,
   WAREHOUSES_REPOSITORY,
 } from "../../../core/adapters/repositories/warehouses/IWarehousesRepository";
+import { AdjustStockInteractor } from "../../../core/interactors/inventory/AdjustStockInteractor";
 import { ListInventoryMovementsInteractor } from "../../../core/interactors/inventory/ListInventoryMovementsInteractor";
 import { ListProductStockByWarehouseInteractor } from "../../../core/interactors/inventory/ListProductStockByWarehouseInteractor";
 import { RecordGiftInteractor } from "../../../core/interactors/inventory/RecordGiftInteractor";
@@ -76,6 +77,27 @@ import { InventoryService } from "../../services/inventory/InventoryService";
         inventoryMovementsRepository: IInventoryMovementsRepository,
       ) =>
         new RecordGiftInteractor(
+          productsRepository,
+          productStockRepository,
+          warehousesRepository,
+          inventoryMovementsRepository,
+        ),
+      inject: [
+        PRODUCTS_REPOSITORY,
+        PRODUCT_STOCK_REPOSITORY,
+        WAREHOUSES_REPOSITORY,
+        INVENTORY_MOVEMENTS_REPOSITORY,
+      ],
+    },
+    {
+      provide: AdjustStockInteractor,
+      useFactory: (
+        productsRepository: IProductsRepository,
+        productStockRepository: IProductStockRepository,
+        warehousesRepository: IWarehousesRepository,
+        inventoryMovementsRepository: IInventoryMovementsRepository,
+      ) =>
+        new AdjustStockInteractor(
           productsRepository,
           productStockRepository,
           warehousesRepository,

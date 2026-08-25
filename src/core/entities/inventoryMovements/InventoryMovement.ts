@@ -1,5 +1,5 @@
 export type MovementType =
-  "sale" | "cancellation" | "return" | "gift" | "restock";
+  "sale" | "cancellation" | "return" | "gift" | "restock" | "adjustment";
 
 export interface InventoryMovement {
   id: string;

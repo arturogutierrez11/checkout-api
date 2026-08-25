@@ -4,6 +4,7 @@ import { Warehouse } from "../../entities/warehouses/Warehouse";
 
 export interface CreateWarehouseInput {
   name: string;
+  document: string;
   addressStreet: string;
   addressStreetNumber: string;
   addressCity: string;
@@ -40,6 +41,7 @@ export class CreateWarehouseInteractor {
 
     const address = await this.zipnovaGateway.createOriginAddress({
       name: input.name,
+      document: input.document,
       street: input.addressStreet,
       streetNumber: input.addressStreetNumber,
       city: input.addressCity,

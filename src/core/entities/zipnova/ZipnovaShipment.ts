@@ -55,6 +55,7 @@ export interface ZipnovaLabel {
 
 export interface CreateOriginAddressInput {
   name: string;
+  document: string;
   street: string;
   streetNumber: string;
   city: string;

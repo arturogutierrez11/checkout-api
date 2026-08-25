@@ -7,6 +7,10 @@ import { InsufficientStockError } from "../../../core/interactors/orders/Insuffi
 import { ProductNotFoundError } from "../../../core/interactors/orders/ProductNotFoundError";
 import { WarehouseNotFoundError } from "../../../core/interactors/warehouses/WarehouseNotFoundError";
 import {
+  AdjustStockInput,
+  AdjustStockInteractor,
+} from "../../../core/interactors/inventory/AdjustStockInteractor";
+import {
   ListInventoryMovementsFilter,
   ListInventoryMovementsInteractor,
 } from "../../../core/interactors/inventory/ListInventoryMovementsInteractor";
@@ -38,6 +42,7 @@ export class InventoryService {
     private readonly listProductStockByWarehouseInteractor: ListProductStockByWarehouseInteractor,
     private readonly restockProductInteractor: RestockProductInteractor,
     private readonly recordGiftInteractor: RecordGiftInteractor,
+    private readonly adjustStockInteractor: AdjustStockInteractor,
   ) {}
 
   async listProducts(): Promise<ProductWithStockByWarehouse[]> {
@@ -91,6 +96,24 @@ export class InventoryService {
       if (err instanceof InsufficientStockError) {
         throw new ConflictException(
           apiError(ApiErrorCode.insufficientStock, err.message),
+        );
+      }
+      if (err instanceof WarehouseNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.warehouseNotFound, err.message),
+        );
+      }
+      throw err;
+    }
+  }
+
+  async adjustStock(input: AdjustStockInput): Promise<InventoryMovement> {
+    try {
+      return await this.adjustStockInteractor.execute(input);
+    } catch (err) {
+      if (err instanceof ProductNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.productNotFound, err.message),
         );
       }
       if (err instanceof WarehouseNotFoundError) {

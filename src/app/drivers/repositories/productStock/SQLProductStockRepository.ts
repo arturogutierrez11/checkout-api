@@ -57,6 +57,19 @@ export class SQLProductStockRepository implements IProductStockRepository {
     return rows[0].stock;
   }
 
+  async getStock(productId: string, warehouseId: string): Promise<number> {
+    const rows = await this.queryRows<{ stock: number }>(
+      `
+        select stock
+        from checkout_product_stock
+        where product_id = $1 and warehouse_id = $2
+      `,
+      [productId, warehouseId],
+    );
+
+    return rows[0] ? Number(rows[0].stock) : 0;
+  }
+
   async listByProduct(productId: string): Promise<ProductWarehouseStock[]> {
     const rows = await this.queryRows<WarehouseStockRow>(
       `

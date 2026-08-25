@@ -20,6 +20,8 @@ export interface IProductStockRepository {
     warehouseId: string,
     quantity: number,
   ): Promise<number>;
+  /** Current stock of one product at one warehouse (0 if no row yet). */
+  getStock(productId: string, warehouseId: string): Promise<number>;
   /** Per-warehouse breakdown for a product, only active warehouses. */
   listByProduct(productId: string): Promise<ProductWarehouseStock[]>;
   /** Sum of stock across every active warehouse. */

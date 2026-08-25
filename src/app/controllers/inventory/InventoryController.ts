@@ -6,6 +6,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
+import { AdjustStockDto } from "../../dtos/inventory/AdjustStockDto";
 import { InventoryMovementResponseDto } from "../../dtos/inventory/InventoryMovementResponseDto";
 import { ProductStockResponseDto } from "../../dtos/inventory/ProductStockResponseDto";
 import { RecordGiftDto } from "../../dtos/inventory/RecordGiftDto";
@@ -92,6 +93,25 @@ export class InventoryController {
       quantity: body.quantity,
       occurredAt: new Date(body.occurredAt),
       note: body.note ?? null,
+    });
+
+    return InventoryMovementResponseDto.fromEntity(movement);
+  }
+
+  @Post("adjustments")
+  @ApiOperation({
+    summary: "Correct a SKU's stock at a warehouse to match a physical count",
+  })
+  @ApiResponse({ status: 201, type: InventoryMovementResponseDto })
+  async adjustStock(
+    @Body() body: AdjustStockDto,
+  ): Promise<InventoryMovementResponseDto> {
+    const movement = await this.inventoryService.adjustStock({
+      sku: body.sku,
+      warehouseId: body.warehouseId,
+      newStock: body.newStock,
+      note: body.note ?? null,
+      occurredAt: body.occurredAt ? new Date(body.occurredAt) : undefined,
     });
 
     return InventoryMovementResponseDto.fromEntity(movement);
