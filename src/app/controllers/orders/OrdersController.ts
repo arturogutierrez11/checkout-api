@@ -103,6 +103,7 @@ export class OrdersController {
       },
       manualPaymentMethod: body.manualPaymentMethod,
       manualPaymentNote: body.manualPaymentNote ?? null,
+      unitPriceOverride: body.unitPriceOverride,
     });
 
     return OrderResponseDto.fromEntity(order);

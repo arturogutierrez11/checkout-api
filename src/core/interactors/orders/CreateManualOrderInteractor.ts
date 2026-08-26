@@ -13,31 +13,34 @@ export interface CreateManualOrderInput {
   productSlug: string;
   quantity: number;
   shippingMethod: ShippingMethod;
+  /** Every field here is optional — a manual sale can be entered with incomplete data. */
   customer: {
-    firstName: string;
-    lastName: string;
-    email: string;
-    phone: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
   };
   shippingAddress: {
-    address: string;
-    city: string;
-    province: string;
-    postalCode: string;
+    address?: string;
+    city?: string;
+    province?: string;
+    postalCode?: string;
   };
   billing: {
-    dni: string;
-    useShippingAddress: boolean;
-    address: string | null;
-    city: string | null;
-    province: string | null;
-    postalCode: string | null;
-    isBusinessPurchase: boolean;
-    cuit: string | null;
-    businessName: string | null;
+    dni?: string;
+    useShippingAddress?: boolean;
+    address?: string | null;
+    city?: string | null;
+    province?: string | null;
+    postalCode?: string | null;
+    isBusinessPurchase?: boolean;
+    cuit?: string | null;
+    businessName?: string | null;
   };
   manualPaymentMethod: string;
   manualPaymentNote: string | null;
+  /** Overrides the catalog price per unit — e.g. a discount given by hand. */
+  unitPriceOverride?: number;
 }
 
 /**
@@ -92,37 +95,39 @@ export class CreateManualOrderInteractor {
       throw new InsufficientStockError(packaging.id);
     }
 
-    const subtotal = product.price * input.quantity;
+    const unitPrice = input.unitPriceOverride ?? product.price;
+    const subtotal = unitPrice * input.quantity;
     const shippingPrice = SHIPPING_PRICES[input.shippingMethod];
+    const customerEmail = input.customer.email?.trim() ?? "";
 
     const order = await this.ordersRepository.createManual({
       productId: product.id,
       productSku: product.sku,
       productName: product.name,
-      unitPrice: product.price,
+      unitPrice,
       quantity: input.quantity,
       currency: product.currency,
       subtotal,
       shippingMethod: input.shippingMethod,
       shippingPrice,
       total: subtotal + shippingPrice,
-      customerFirstName: input.customer.firstName,
-      customerLastName: input.customer.lastName,
-      customerEmail: input.customer.email,
-      customerPhone: input.customer.phone,
-      shippingAddress: input.shippingAddress.address,
-      shippingCity: input.shippingAddress.city,
-      shippingProvince: input.shippingAddress.province,
-      shippingPostalCode: input.shippingAddress.postalCode,
-      billingDni: input.billing.dni,
-      billingUseShippingAddress: input.billing.useShippingAddress,
-      billingAddress: input.billing.address,
-      billingCity: input.billing.city,
-      billingProvince: input.billing.province,
-      billingPostalCode: input.billing.postalCode,
-      isBusinessPurchase: input.billing.isBusinessPurchase,
-      billingCuit: input.billing.cuit,
-      billingBusinessName: input.billing.businessName,
+      customerFirstName: input.customer.firstName ?? "",
+      customerLastName: input.customer.lastName ?? "",
+      customerEmail,
+      customerPhone: input.customer.phone ?? "",
+      shippingAddress: input.shippingAddress.address ?? "",
+      shippingCity: input.shippingAddress.city ?? "",
+      shippingProvince: input.shippingAddress.province ?? "",
+      shippingPostalCode: input.shippingAddress.postalCode ?? "",
+      billingDni: input.billing.dni ?? "",
+      billingUseShippingAddress: input.billing.useShippingAddress ?? true,
+      billingAddress: input.billing.address ?? null,
+      billingCity: input.billing.city ?? null,
+      billingProvince: input.billing.province ?? null,
+      billingPostalCode: input.billing.postalCode ?? null,
+      isBusinessPurchase: input.billing.isBusinessPurchase ?? false,
+      billingCuit: input.billing.cuit ?? null,
+      billingBusinessName: input.billing.businessName ?? null,
       manualPaymentMethod: input.manualPaymentMethod,
       manualPaymentNote: input.manualPaymentNote,
     });
@@ -132,6 +137,12 @@ export class CreateManualOrderInteractor {
       eventType: "manual_sale_created",
       payload: { manualPaymentMethod: input.manualPaymentMethod },
     });
+
+    // No email on file — nothing to send, and nothing to mark either (if it
+    // gets filled in later there's still a chance to send it manually).
+    if (!customerEmail) {
+      return order;
+    }
 
     const shouldSend = await this.ordersRepository.markEmailSent(order.id);
 

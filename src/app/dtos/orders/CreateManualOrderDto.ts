@@ -1,7 +1,9 @@
 import { Type } from "class-transformer";
 import {
+  IsBoolean,
   IsIn,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   Max,
@@ -9,7 +11,37 @@ import {
   Min,
   ValidateNested,
 } from "class-validator";
-import { BillingDto, CustomerDto, ShippingAddressDto } from "./CreateOrderDto";
+
+/**
+ * Manual sales are entered by the admin, sometimes with incomplete data
+ * (e.g. a walk-in cash sale with no email on hand) — every field here is
+ * optional, unlike the public checkout's strict DTOs.
+ */
+export class ManualCustomerDto {
+  @IsOptional() @IsString() @MaxLength(60) firstName?: string;
+  @IsOptional() @IsString() @MaxLength(60) lastName?: string;
+  @IsOptional() @IsString() @MaxLength(160) email?: string;
+  @IsOptional() @IsString() @MaxLength(30) phone?: string;
+}
+
+export class ManualShippingAddressDto {
+  @IsOptional() @IsString() @MaxLength(160) address?: string;
+  @IsOptional() @IsString() @MaxLength(80) city?: string;
+  @IsOptional() @IsString() @MaxLength(80) province?: string;
+  @IsOptional() @IsString() @MaxLength(12) postalCode?: string;
+}
+
+export class ManualBillingDto {
+  @IsOptional() @IsString() @MaxLength(20) dni?: string;
+  @IsOptional() @IsBoolean() useShippingAddress?: boolean;
+  @IsOptional() @IsString() @MaxLength(160) address?: string;
+  @IsOptional() @IsString() @MaxLength(80) city?: string;
+  @IsOptional() @IsString() @MaxLength(80) province?: string;
+  @IsOptional() @IsString() @MaxLength(12) postalCode?: string;
+  @IsOptional() @IsBoolean() isBusinessPurchase?: boolean;
+  @IsOptional() @IsString() @MaxLength(20) cuit?: string;
+  @IsOptional() @IsString() @MaxLength(160) businessName?: string;
+}
 
 export class CreateManualOrderDto {
   @IsString() @MaxLength(60) productSlug!: string;
@@ -19,16 +51,16 @@ export class CreateManualOrderDto {
   @IsIn(["standard", "express"]) shippingMethod!: "standard" | "express";
 
   @ValidateNested()
-  @Type(() => CustomerDto)
-  customer!: CustomerDto;
+  @Type(() => ManualCustomerDto)
+  customer!: ManualCustomerDto;
 
   @ValidateNested()
-  @Type(() => ShippingAddressDto)
-  shippingAddress!: ShippingAddressDto;
+  @Type(() => ManualShippingAddressDto)
+  shippingAddress!: ManualShippingAddressDto;
 
   @ValidateNested()
-  @Type(() => BillingDto)
-  billing!: BillingDto;
+  @Type(() => ManualBillingDto)
+  billing!: ManualBillingDto;
 
   @IsString()
   @MaxLength(60)
@@ -38,4 +70,10 @@ export class CreateManualOrderDto {
   @IsString()
   @MaxLength(300)
   manualPaymentNote?: string;
+
+  /** Overrides the catalog price per unit — e.g. a discount given by hand. */
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  unitPriceOverride?: number;
 }
