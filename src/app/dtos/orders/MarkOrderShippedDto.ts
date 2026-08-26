@@ -1,6 +1,9 @@
 import { IsOptional, IsString, MaxLength } from "class-validator";
 
 export class MarkOrderShippedDto {
+  @IsString()
+  warehouseId!: string;
+
   @IsOptional()
   @IsString()
   @MaxLength(80)

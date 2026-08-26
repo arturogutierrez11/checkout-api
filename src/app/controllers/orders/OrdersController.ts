@@ -148,11 +148,15 @@ export class OrdersController {
     @Param("id") id: string,
     @Body() body: MarkOrderShippedDto,
   ): Promise<OrderResponseDto> {
-    const order = await this.ordersService.ship(id, {
-      carrier: body.carrier ?? null,
-      trackingNumber: body.trackingNumber ?? null,
-      labelUrl: body.labelUrl ?? null,
-    });
+    const order = await this.ordersService.ship(
+      id,
+      {
+        carrier: body.carrier ?? null,
+        trackingNumber: body.trackingNumber ?? null,
+        labelUrl: body.labelUrl ?? null,
+      },
+      body.warehouseId,
+    );
     return OrderResponseDto.fromEntity(order);
   }
 

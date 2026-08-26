@@ -160,9 +160,17 @@ export class OrdersService {
     }
   }
 
-  async ship(orderId: string, data: MarkShippedData): Promise<Order> {
+  async ship(
+    orderId: string,
+    data: MarkShippedData,
+    warehouseId: string,
+  ): Promise<Order> {
     try {
-      return await this.markOrderShippedInteractor.execute(orderId, data);
+      return await this.markOrderShippedInteractor.execute(
+        orderId,
+        data,
+        warehouseId,
+      );
     } catch (err) {
       if (err instanceof OrderNotFoundError) {
         throw new NotFoundException(
@@ -172,6 +180,16 @@ export class OrdersService {
       if (err instanceof OrderNotShippableError) {
         throw new ConflictException(
           apiError(ApiErrorCode.orderNotShippable, err.message),
+        );
+      }
+      if (err instanceof WarehouseNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.warehouseNotFound, err.message),
+        );
+      }
+      if (err instanceof InsufficientStockError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.insufficientStock, err.message),
         );
       }
       throw err;
