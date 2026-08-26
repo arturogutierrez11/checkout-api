@@ -198,11 +198,30 @@ export class ZipnovaGateway implements IZipnovaGateway {
       );
     }
 
+    const contentType = response.headers.get("content-type") ?? "";
+
+    // Zipnova doesn't stream the raw file — it wraps it in JSON as
+    // { format: "pdf", body: "<base64>" }.
+    if (contentType.includes("application/json")) {
+      const payload = (await response.json()) as { body?: string };
+
+      if (!payload.body) {
+        throw new Error(
+          "Zipnova no devolvió el contenido de la etiqueta en la respuesta.",
+        );
+      }
+
+      return {
+        buffer: Buffer.from(payload.body, "base64"),
+        contentType: "application/pdf",
+      };
+    }
+
     const arrayBuffer = await response.arrayBuffer();
 
     return {
       buffer: Buffer.from(arrayBuffer),
-      contentType: response.headers.get("content-type") ?? "application/pdf",
+      contentType: contentType || "application/pdf",
     };
   }
 
