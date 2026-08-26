@@ -2,6 +2,7 @@ import { IInventoryMovementsRepository } from "../../adapters/repositories/inven
 import { IProductStockRepository } from "../../adapters/repositories/productStock/IProductStockRepository";
 import { IProductsRepository } from "../../adapters/repositories/products/IProductsRepository";
 import { IWarehousesRepository } from "../../adapters/repositories/warehouses/IWarehousesRepository";
+import { InventoryMovement } from "../../entities/inventoryMovements/InventoryMovement";
 import { Order } from "../../entities/orders/Order";
 import { CARDS_SKU, PACKAGING_SKU } from "../../entities/products/Product";
 import { Warehouse } from "../../entities/warehouses/Warehouse";
@@ -12,6 +13,19 @@ import { ProductNotFoundError } from "./ProductNotFoundError";
 export interface ReserveOrderStockResult {
   warehouse: Warehouse;
   cardUnits: number;
+}
+
+/** Sale/cancellation/return movements, most recent first. */
+function existingReservationMovements(
+  movements: InventoryMovement[],
+): InventoryMovement[] {
+  return movements
+    .filter((movement) =>
+      (["sale", "cancellation", "return"] as const).includes(
+        movement.movementType as "sale" | "cancellation" | "return",
+      ),
+    )
+    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 }
 
 /**
@@ -54,15 +68,18 @@ export class ReserveOrderStockInteractor {
 
     const cardUnits = order.quantity * product.bundleUnits;
 
-    const existingMovements =
-      await this.inventoryMovementsRepository.listByOrder(order.id);
-    const existingSale = existingMovements.find(
-      (movement) => movement.movementType === "sale" && movement.warehouseId,
+    // A "sale" can later be undone by a "cancellation"/"return" (e.g. a
+    // voided Zipnova shipment reset via ResetShippingLabelInteractor) —
+    // whether this order is *currently* reserved depends on which of those
+    // happened most recently, not on whether a "sale" ever existed at all.
+    const reservationMovements = existingReservationMovements(
+      await this.inventoryMovementsRepository.listByOrder(order.id),
     );
+    const latest = reservationMovements[0];
 
-    if (existingSale?.warehouseId) {
+    if (latest?.movementType === "sale" && latest.warehouseId) {
       const alreadyReservedWarehouse = await this.warehousesRepository.getById(
-        existingSale.warehouseId,
+        latest.warehouseId,
       );
 
       if (alreadyReservedWarehouse) {

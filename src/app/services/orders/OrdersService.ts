@@ -23,6 +23,7 @@ import { CancelOrderInteractor } from "../../../core/interactors/orders/CancelOr
 import { DownloadShippingLabelInteractor } from "../../../core/interactors/orders/DownloadShippingLabelInteractor";
 import { GenerateShippingLabelInteractor } from "../../../core/interactors/orders/GenerateShippingLabelInteractor";
 import { ResetShippingLabelInteractor } from "../../../core/interactors/orders/ResetShippingLabelInteractor";
+import { AssignOrderWarehouseInteractor } from "../../../core/interactors/orders/AssignOrderWarehouseInteractor";
 import { MarkOrderShippedInteractor } from "../../../core/interactors/orders/MarkOrderShippedInteractor";
 import { ResyncOrderInteractor } from "../../../core/interactors/orders/ResyncOrderInteractor";
 import { ReturnOrderInteractor } from "../../../core/interactors/orders/ReturnOrderInteractor";
@@ -58,6 +59,7 @@ export class OrdersService {
     private readonly markOrderShippedInteractor: MarkOrderShippedInteractor,
     private readonly generateShippingLabelInteractor: GenerateShippingLabelInteractor,
     private readonly resetShippingLabelInteractor: ResetShippingLabelInteractor,
+    private readonly assignOrderWarehouseInteractor: AssignOrderWarehouseInteractor,
     private readonly downloadShippingLabelInteractor: DownloadShippingLabelInteractor,
     private readonly resyncOrderInteractor: ResyncOrderInteractor,
     private readonly returnOrderInteractor: ReturnOrderInteractor,
@@ -254,6 +256,37 @@ export class OrdersService {
       if (err instanceof OrderNotFoundError) {
         throw new NotFoundException(
           apiError(ApiErrorCode.orderNotFound, err.message),
+        );
+      }
+      throw err;
+    }
+  }
+
+  async reserveStock(orderId: string, warehouseId: string): Promise<Order> {
+    try {
+      return await this.assignOrderWarehouseInteractor.execute(
+        orderId,
+        warehouseId,
+      );
+    } catch (err) {
+      if (err instanceof OrderNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.orderNotFound, err.message),
+        );
+      }
+      if (err instanceof OrderNotShippableError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.orderNotShippable, err.message),
+        );
+      }
+      if (err instanceof WarehouseNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.warehouseNotFound, err.message),
+        );
+      }
+      if (err instanceof InsufficientStockError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.insufficientStock, err.message),
         );
       }
       throw err;

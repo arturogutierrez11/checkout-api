@@ -9,6 +9,7 @@ export class InventoryMovementResponseDto {
   @ApiProperty() quantityDelta!: number;
   @ApiProperty() stockAfter!: number;
   @ApiProperty({ nullable: true }) orderId!: string | null;
+  @ApiProperty({ nullable: true }) warehouseId!: string | null;
   @ApiProperty({ nullable: true }) note!: string | null;
   @ApiProperty() occurredAt!: string;
   @ApiProperty() createdAt!: string;
@@ -21,6 +22,7 @@ export class InventoryMovementResponseDto {
       quantityDelta: movement.quantityDelta,
       stockAfter: movement.stockAfter,
       orderId: movement.orderId,
+      warehouseId: movement.warehouseId,
       note: movement.note,
       occurredAt: requiredDateISOString(movement.occurredAt, "occurredAt"),
       createdAt: requiredDateISOString(movement.createdAt, "createdAt"),

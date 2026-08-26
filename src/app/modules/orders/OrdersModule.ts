@@ -46,6 +46,7 @@ import { GetOrderInteractor } from "../../../core/interactors/orders/GetOrderInt
 import { ListOrdersInteractor } from "../../../core/interactors/orders/ListOrdersInteractor";
 import { MarkOrderShippedInteractor } from "../../../core/interactors/orders/MarkOrderShippedInteractor";
 import { ReserveOrderStockInteractor } from "../../../core/interactors/orders/ReserveOrderStockInteractor";
+import { AssignOrderWarehouseInteractor } from "../../../core/interactors/orders/AssignOrderWarehouseInteractor";
 import { ResetShippingLabelInteractor } from "../../../core/interactors/orders/ResetShippingLabelInteractor";
 import { ResyncOrderInteractor } from "../../../core/interactors/orders/ResyncOrderInteractor";
 import { ReturnOrderInteractor } from "../../../core/interactors/orders/ReturnOrderInteractor";
@@ -252,6 +253,24 @@ import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
       inject: [
         ORDERS_REPOSITORY,
         ReleaseOrderStockInteractor,
+        ORDER_EVENTS_REPOSITORY,
+      ],
+    },
+    {
+      provide: AssignOrderWarehouseInteractor,
+      useFactory: (
+        ordersRepository: IOrdersRepository,
+        reserveOrderStockInteractor: ReserveOrderStockInteractor,
+        orderEventsRepository: IOrderEventsRepository,
+      ) =>
+        new AssignOrderWarehouseInteractor(
+          ordersRepository,
+          reserveOrderStockInteractor,
+          orderEventsRepository,
+        ),
+      inject: [
+        ORDERS_REPOSITORY,
+        ReserveOrderStockInteractor,
         ORDER_EVENTS_REPOSITORY,
       ],
     },

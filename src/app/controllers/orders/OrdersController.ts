@@ -178,6 +178,20 @@ export class OrdersController {
     return OrderResponseDto.fromEntity(order);
   }
 
+  @Post(":id/reserve-stock")
+  @ApiOperation({
+    summary:
+      "Assign a depósito to an order and decrement its stock right away, independent of generating a label or marking it shipped",
+  })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async reserveStock(
+    @Param("id") id: string,
+    @Body() body: GenerateShippingLabelDto,
+  ): Promise<OrderResponseDto> {
+    const order = await this.ordersService.reserveStock(id, body.warehouseId);
+    return OrderResponseDto.fromEntity(order);
+  }
+
   @Post(":id/shipping-label/reset")
   @ApiOperation({
     summary:
