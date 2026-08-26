@@ -51,6 +51,7 @@ interface OrderRow {
   salesChannel: string;
   manualPaymentMethod: string | null;
   manualPaymentNote: string | null;
+  assignedAdminId: string | null;
   shippingStatus: string;
   shippingCarrier: string | null;
   shippingTrackingNumber: string | null;
@@ -108,6 +109,7 @@ const ORDER_COLUMNS = `
   sales_channel as "salesChannel",
   manual_payment_method as "manualPaymentMethod",
   manual_payment_note as "manualPaymentNote",
+  assigned_admin_id as "assignedAdminId",
   shipping_status as "shippingStatus",
   shipping_carrier as "shippingCarrier",
   shipping_tracking_number as "shippingTrackingNumber",
@@ -481,6 +483,23 @@ export class SQLOrdersRepository implements IOrdersRepository {
     return rows.length > 0;
   }
 
+  async assignAdmin(
+    orderId: string,
+    adminUserId: string | null,
+  ): Promise<boolean> {
+    const rows = await this.queryRows<{ id: string }>(
+      `
+        update checkout_orders
+        set assigned_admin_id = $2, updated_at = now()
+        where id = $1
+        returning id
+      `,
+      [orderId, adminUserId],
+    );
+
+    return rows.length > 0;
+  }
+
   async setShippingStatus(
     orderId: string,
     status: ShippingStatus,
@@ -574,6 +593,7 @@ export class SQLOrdersRepository implements IOrdersRepository {
       salesChannel: row.salesChannel as Order["salesChannel"],
       manualPaymentMethod: row.manualPaymentMethod,
       manualPaymentNote: row.manualPaymentNote,
+      assignedAdminId: row.assignedAdminId,
       shippingStatus: row.shippingStatus as Order["shippingStatus"],
       shippingCarrier: row.shippingCarrier,
       shippingTrackingNumber: row.shippingTrackingNumber,

@@ -17,6 +17,8 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
+import { AdminUserResponseDto } from "../../dtos/adminUsers/AdminUserResponseDto";
+import { AssignOrderAdminDto } from "../../dtos/orders/AssignOrderAdminDto";
 import { CreateManualOrderDto } from "../../dtos/orders/CreateManualOrderDto";
 import { CreateOrderDto } from "../../dtos/orders/CreateOrderDto";
 import { CreateOrderResponseDto } from "../../dtos/orders/CreateOrderResponseDto";
@@ -109,6 +111,16 @@ export class OrdersController {
     return OrderResponseDto.fromEntity(order);
   }
 
+  @Get("admins")
+  @ApiOperation({
+    summary: "List admin accounts eligible to be assigned to an order",
+  })
+  @ApiResponse({ status: 200, type: [AdminUserResponseDto] })
+  async listAdmins(): Promise<AdminUserResponseDto[]> {
+    const admins = await this.ordersService.listAdmins();
+    return admins.map((admin) => AdminUserResponseDto.fromEntity(admin));
+  }
+
   @Get(":id")
   @ApiOperation({ summary: "Get an order by id" })
   @ApiResponse({ status: 200, type: OrderResponseDto })
@@ -189,6 +201,23 @@ export class OrdersController {
     @Body() body: GenerateShippingLabelDto,
   ): Promise<OrderResponseDto> {
     const order = await this.ordersService.reserveStock(id, body.warehouseId);
+    return OrderResponseDto.fromEntity(order);
+  }
+
+  @Post(":id/assign-admin")
+  @ApiOperation({
+    summary:
+      "Assign (or unassign) which admin is responsible for dispatching an order",
+  })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async assignAdmin(
+    @Param("id") id: string,
+    @Body() body: AssignOrderAdminDto,
+  ): Promise<OrderResponseDto> {
+    const order = await this.ordersService.assignAdmin(
+      id,
+      body.adminUserId ?? null,
+    );
     return OrderResponseDto.fromEntity(order);
   }
 
