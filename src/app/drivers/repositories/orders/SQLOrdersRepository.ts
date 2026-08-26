@@ -458,6 +458,29 @@ export class SQLOrdersRepository implements IOrdersRepository {
     return rows.length > 0;
   }
 
+  async resetShippingLabel(orderId: string): Promise<boolean> {
+    const rows = await this.queryRows<{ id: string }>(
+      `
+        update checkout_orders
+        set
+          shipping_zipnova_shipment_id = null,
+          shipping_carrier = null,
+          shipping_tracking_number = null,
+          shipping_label_url = null,
+          shipping_real_cost = null,
+          shipping_zipnova_status = null,
+          shipping_status = 'pending_dispatch',
+          shipped_at = null,
+          updated_at = now()
+        where id = $1 and shipping_zipnova_shipment_id is not null
+        returning id
+      `,
+      [orderId],
+    );
+
+    return rows.length > 0;
+  }
+
   async setShippingStatus(
     orderId: string,
     status: ShippingStatus,

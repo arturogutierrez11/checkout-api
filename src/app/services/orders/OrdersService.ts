@@ -22,6 +22,7 @@ import {
 import { CancelOrderInteractor } from "../../../core/interactors/orders/CancelOrderInteractor";
 import { DownloadShippingLabelInteractor } from "../../../core/interactors/orders/DownloadShippingLabelInteractor";
 import { GenerateShippingLabelInteractor } from "../../../core/interactors/orders/GenerateShippingLabelInteractor";
+import { ResetShippingLabelInteractor } from "../../../core/interactors/orders/ResetShippingLabelInteractor";
 import { MarkOrderShippedInteractor } from "../../../core/interactors/orders/MarkOrderShippedInteractor";
 import { ResyncOrderInteractor } from "../../../core/interactors/orders/ResyncOrderInteractor";
 import { ReturnOrderInteractor } from "../../../core/interactors/orders/ReturnOrderInteractor";
@@ -56,6 +57,7 @@ export class OrdersService {
     private readonly cancelOrderInteractor: CancelOrderInteractor,
     private readonly markOrderShippedInteractor: MarkOrderShippedInteractor,
     private readonly generateShippingLabelInteractor: GenerateShippingLabelInteractor,
+    private readonly resetShippingLabelInteractor: ResetShippingLabelInteractor,
     private readonly downloadShippingLabelInteractor: DownloadShippingLabelInteractor,
     private readonly resyncOrderInteractor: ResyncOrderInteractor,
     private readonly returnOrderInteractor: ReturnOrderInteractor,
@@ -242,6 +244,19 @@ export class OrdersService {
           err instanceof Error ? err.message : "Zipnova request failed",
         ),
       );
+    }
+  }
+
+  async resetShippingLabel(orderId: string): Promise<Order> {
+    try {
+      return await this.resetShippingLabelInteractor.execute(orderId);
+    } catch (err) {
+      if (err instanceof OrderNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.orderNotFound, err.message),
+        );
+      }
+      throw err;
     }
   }
 

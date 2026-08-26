@@ -50,6 +50,8 @@ export interface IOrdersRepository {
     orderId: string,
     data: SaveShipmentData,
   ): Promise<boolean>;
+  /** Clears a voided Zipnova shipment so a new label can be generated. Atomic: only clears if one was actually set. Returns whether it did. */
+  resetShippingLabel(orderId: string): Promise<boolean>;
   /** Manual (or webhook-driven) status set. Stamps shipped_at when transitioning to 'shipped' if not already set. Returns whether the order existed. */
   setShippingStatus(orderId: string, status: ShippingStatus): Promise<boolean>;
   /** Records the last raw status Zipnova reported, independent of the simplified shippingStatus. */

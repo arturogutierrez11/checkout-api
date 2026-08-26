@@ -177,6 +177,17 @@ export class OrdersController {
     return OrderResponseDto.fromEntity(order);
   }
 
+  @Post(":id/shipping-label/reset")
+  @ApiOperation({
+    summary:
+      "Undo a Zipnova shipment that got voided before it ever left the depósito — releases its reserved stock and clears the shipment so a new label can be generated",
+  })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async resetShippingLabel(@Param("id") id: string): Promise<OrderResponseDto> {
+    const order = await this.ordersService.resetShippingLabel(id);
+    return OrderResponseDto.fromEntity(order);
+  }
+
   @Get(":id/shipping-label")
   @ApiOperation({ summary: "Download the shipment's PDF label from Zipnova" })
   @Header("Content-Type", "application/pdf")
