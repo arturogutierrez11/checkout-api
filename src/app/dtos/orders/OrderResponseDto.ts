@@ -50,7 +50,7 @@ export class OrderResponseDto {
   @ApiProperty({ nullable: true }) manualPaymentMethod!: string | null;
   @ApiProperty({ nullable: true }) manualPaymentNote!: string | null;
 
-  @ApiProperty({ nullable: true }) assignedAdminId!: string | null;
+  @ApiProperty({ nullable: true }) assignedDispatcher!: string | null;
 
   @ApiProperty() shippingStatus!: string;
   @ApiProperty({ nullable: true }) shippingCarrier!: string | null;
@@ -107,7 +107,7 @@ export class OrderResponseDto {
       salesChannel: order.salesChannel,
       manualPaymentMethod: order.manualPaymentMethod,
       manualPaymentNote: order.manualPaymentNote,
-      assignedAdminId: order.assignedAdminId,
+      assignedDispatcher: order.assignedDispatcher,
       shippingStatus: order.shippingStatus,
       shippingCarrier: order.shippingCarrier,
       shippingTrackingNumber: order.shippingTrackingNumber,

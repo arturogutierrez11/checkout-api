@@ -24,10 +24,8 @@ import { DownloadShippingLabelInteractor } from "../../../core/interactors/order
 import { GenerateShippingLabelInteractor } from "../../../core/interactors/orders/GenerateShippingLabelInteractor";
 import { ResetShippingLabelInteractor } from "../../../core/interactors/orders/ResetShippingLabelInteractor";
 import { AssignOrderWarehouseInteractor } from "../../../core/interactors/orders/AssignOrderWarehouseInteractor";
-import { AssignOrderAdminInteractor } from "../../../core/interactors/orders/AssignOrderAdminInteractor";
-import { AdminUserNotFoundError } from "../../../core/interactors/orders/AdminUserNotFoundError";
-import { ListAdminsInteractor } from "../../../core/interactors/adminUsers/ListAdminsInteractor";
-import { AdminUser } from "../../../core/entities/adminUsers/AdminUser";
+import { AssignOrderDispatcherInteractor } from "../../../core/interactors/orders/AssignOrderDispatcherInteractor";
+import { InvalidDispatcherError } from "../../../core/interactors/orders/InvalidDispatcherError";
 import { MarkOrderShippedInteractor } from "../../../core/interactors/orders/MarkOrderShippedInteractor";
 import { ResyncOrderInteractor } from "../../../core/interactors/orders/ResyncOrderInteractor";
 import { ReturnOrderInteractor } from "../../../core/interactors/orders/ReturnOrderInteractor";
@@ -64,8 +62,7 @@ export class OrdersService {
     private readonly generateShippingLabelInteractor: GenerateShippingLabelInteractor,
     private readonly resetShippingLabelInteractor: ResetShippingLabelInteractor,
     private readonly assignOrderWarehouseInteractor: AssignOrderWarehouseInteractor,
-    private readonly assignOrderAdminInteractor: AssignOrderAdminInteractor,
-    private readonly listAdminsInteractor: ListAdminsInteractor,
+    private readonly assignOrderDispatcherInteractor: AssignOrderDispatcherInteractor,
     private readonly downloadShippingLabelInteractor: DownloadShippingLabelInteractor,
     private readonly resyncOrderInteractor: ResyncOrderInteractor,
     private readonly returnOrderInteractor: ReturnOrderInteractor,
@@ -135,18 +132,14 @@ export class OrdersService {
     }
   }
 
-  listAdmins(): Promise<AdminUser[]> {
-    return this.listAdminsInteractor.execute();
-  }
-
-  async assignAdmin(
+  async assignDispatcher(
     orderId: string,
-    adminUserId: string | null,
+    dispatcher: string | null,
   ): Promise<Order> {
     try {
-      return await this.assignOrderAdminInteractor.execute(
+      return await this.assignOrderDispatcherInteractor.execute(
         orderId,
-        adminUserId,
+        dispatcher,
       );
     } catch (err) {
       if (err instanceof OrderNotFoundError) {
@@ -154,9 +147,9 @@ export class OrdersService {
           apiError(ApiErrorCode.orderNotFound, err.message),
         );
       }
-      if (err instanceof AdminUserNotFoundError) {
-        throw new NotFoundException(
-          apiError(ApiErrorCode.adminUserNotFound, err.message),
+      if (err instanceof InvalidDispatcherError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.invalidDispatcher, err.message),
         );
       }
       throw err;

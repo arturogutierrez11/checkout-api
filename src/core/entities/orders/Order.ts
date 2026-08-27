@@ -56,8 +56,8 @@ export interface Order {
   manualPaymentMethod: string | null;
   manualPaymentNote: string | null;
 
-  /** Which admin is responsible for dispatching this order — null if unassigned. */
-  assignedAdminId: string | null;
+  /** Who is responsible for dispatching this order — null if unassigned. */
+  assignedDispatcher: string | null;
 
   shippingStatus: ShippingStatus;
   shippingCarrier: string | null;

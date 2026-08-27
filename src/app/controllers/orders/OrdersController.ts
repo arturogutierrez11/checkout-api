@@ -17,8 +17,7 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from "@nestjs/swagger";
-import { AdminUserResponseDto } from "../../dtos/adminUsers/AdminUserResponseDto";
-import { AssignOrderAdminDto } from "../../dtos/orders/AssignOrderAdminDto";
+import { AssignOrderDispatcherDto } from "../../dtos/orders/AssignOrderDispatcherDto";
 import { CreateManualOrderDto } from "../../dtos/orders/CreateManualOrderDto";
 import { CreateOrderDto } from "../../dtos/orders/CreateOrderDto";
 import { CreateOrderResponseDto } from "../../dtos/orders/CreateOrderResponseDto";
@@ -30,6 +29,7 @@ import { SetInvoiceStatusDto } from "../../dtos/orders/SetInvoiceStatusDto";
 import { SetShippingStatusDto } from "../../dtos/orders/SetShippingStatusDto";
 import { CheckoutInternalGuard } from "../../services/checkoutInternalAuth/guards/CheckoutInternalGuard";
 import { OrdersService } from "../../services/orders/OrdersService";
+import { DISPATCHERS } from "../../../core/entities/orders/dispatchers";
 import type { OrderStatus } from "../../../core/entities/orders/Order";
 
 @ApiTags("orders")
@@ -111,14 +111,13 @@ export class OrdersController {
     return OrderResponseDto.fromEntity(order);
   }
 
-  @Get("admins")
+  @Get("dispatchers")
   @ApiOperation({
-    summary: "List admin accounts eligible to be assigned to an order",
+    summary: "List the people eligible to be assigned to dispatch an order",
   })
-  @ApiResponse({ status: 200, type: [AdminUserResponseDto] })
-  async listAdmins(): Promise<AdminUserResponseDto[]> {
-    const admins = await this.ordersService.listAdmins();
-    return admins.map((admin) => AdminUserResponseDto.fromEntity(admin));
+  @ApiResponse({ status: 200, type: [String] })
+  listDispatchers(): string[] {
+    return [...DISPATCHERS];
   }
 
   @Get(":id")
@@ -204,19 +203,18 @@ export class OrdersController {
     return OrderResponseDto.fromEntity(order);
   }
 
-  @Post(":id/assign-admin")
+  @Post(":id/assign-dispatcher")
   @ApiOperation({
-    summary:
-      "Assign (or unassign) which admin is responsible for dispatching an order",
+    summary: "Assign (or unassign) who is responsible for dispatching an order",
   })
   @ApiResponse({ status: 201, type: OrderResponseDto })
-  async assignAdmin(
+  async assignDispatcher(
     @Param("id") id: string,
-    @Body() body: AssignOrderAdminDto,
+    @Body() body: AssignOrderDispatcherDto,
   ): Promise<OrderResponseDto> {
-    const order = await this.ordersService.assignAdmin(
+    const order = await this.ordersService.assignDispatcher(
       id,
-      body.adminUserId ?? null,
+      body.dispatcher ?? null,
     );
     return OrderResponseDto.fromEntity(order);
   }

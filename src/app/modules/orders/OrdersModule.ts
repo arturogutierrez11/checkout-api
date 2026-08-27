@@ -1,9 +1,5 @@
 import { Module } from "@nestjs/common";
 import {
-  IAdminUsersRepository,
-  ADMIN_USERS_REPOSITORY,
-} from "../../../core/adapters/repositories/adminUsers/IAdminUsersRepository";
-import {
   IInventoryMovementsRepository,
   INVENTORY_MOVEMENTS_REPOSITORY,
 } from "../../../core/adapters/repositories/inventoryMovements/IInventoryMovementsRepository";
@@ -40,9 +36,8 @@ import {
   ZIPNOVA_GATEWAY,
 } from "../../../core/adapters/services/zipnova/IZipnovaGateway";
 import { ReleaseOrderStockInteractor } from "../../../core/interactors/inventory/ReleaseOrderStockInteractor";
-import { ListAdminsInteractor } from "../../../core/interactors/adminUsers/ListAdminsInteractor";
 import { ApplyMercadoPagoPaymentToOrderInteractor } from "../../../core/interactors/orders/ApplyMercadoPagoPaymentToOrderInteractor";
-import { AssignOrderAdminInteractor } from "../../../core/interactors/orders/AssignOrderAdminInteractor";
+import { AssignOrderDispatcherInteractor } from "../../../core/interactors/orders/AssignOrderDispatcherInteractor";
 import { CancelOrderInteractor } from "../../../core/interactors/orders/CancelOrderInteractor";
 import { CreateManualOrderInteractor } from "../../../core/interactors/orders/CreateManualOrderInteractor";
 import { CreateOrderInteractor } from "../../../core/interactors/orders/CreateOrderInteractor";
@@ -281,19 +276,10 @@ import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
       ],
     },
     {
-      provide: ListAdminsInteractor,
-      useFactory: (adminUsersRepository: IAdminUsersRepository) =>
-        new ListAdminsInteractor(adminUsersRepository),
-      inject: [ADMIN_USERS_REPOSITORY],
-    },
-    {
-      provide: AssignOrderAdminInteractor,
-      useFactory: (
-        ordersRepository: IOrdersRepository,
-        adminUsersRepository: IAdminUsersRepository,
-      ) =>
-        new AssignOrderAdminInteractor(ordersRepository, adminUsersRepository),
-      inject: [ORDERS_REPOSITORY, ADMIN_USERS_REPOSITORY],
+      provide: AssignOrderDispatcherInteractor,
+      useFactory: (ordersRepository: IOrdersRepository) =>
+        new AssignOrderDispatcherInteractor(ordersRepository),
+      inject: [ORDERS_REPOSITORY],
     },
     {
       provide: DownloadShippingLabelInteractor,
