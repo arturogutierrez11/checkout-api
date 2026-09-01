@@ -67,6 +67,11 @@ interface OrderRow {
   invoicedAt: Date | string | null;
   approvedAt: Date | string | null;
   emailSentAt: Date | string | null;
+  fbp: string | null;
+  fbc: string | null;
+  clientIpAddress: string | null;
+  clientUserAgent: string | null;
+  metaPurchaseSentAt: Date | string | null;
   createdAt: Date | string;
   updatedAt: Date | string;
 }
@@ -125,6 +130,11 @@ const ORDER_COLUMNS = `
   invoiced_at as "invoicedAt",
   approved_at as "approvedAt",
   email_sent_at as "emailSentAt",
+  fbp,
+  fbc,
+  client_ip_address as "clientIpAddress",
+  client_user_agent as "clientUserAgent",
+  meta_purchase_sent_at as "metaPurchaseSentAt",
   created_at as "createdAt",
   updated_at as "updatedAt"
 `;
@@ -146,7 +156,7 @@ export class SQLOrdersRepository implements IOrdersRepository {
           shipping_address, shipping_city, shipping_province, shipping_postal_code,
           billing_dni, billing_use_shipping_address, billing_address, billing_city,
           billing_province, billing_postal_code, is_business_purchase, billing_cuit,
-          billing_business_name
+          billing_business_name, fbp, fbc, client_ip_address, client_user_agent
         )
         values (
           $1, $2, $3, $4, $5, $6, $7,
@@ -155,7 +165,7 @@ export class SQLOrdersRepository implements IOrdersRepository {
           $15, $16, $17, $18,
           $19, $20, $21, $22,
           $23, $24, $25, $26,
-          $27
+          $27, $28, $29, $30, $31
         )
         returning ${ORDER_COLUMNS}
       `,
@@ -187,6 +197,10 @@ export class SQLOrdersRepository implements IOrdersRepository {
         data.isBusinessPurchase,
         data.billingCuit,
         data.billingBusinessName,
+        data.fbp,
+        data.fbc,
+        data.clientIpAddress,
+        data.clientUserAgent,
       ],
     );
 
@@ -392,6 +406,31 @@ export class SQLOrdersRepository implements IOrdersRepository {
       `
         update checkout_orders
         set email_sent_at = null, updated_at = now()
+        where id = $1
+      `,
+      [orderId],
+    );
+  }
+
+  async markMetaPurchaseSent(orderId: string): Promise<boolean> {
+    const rows = await this.queryRows<{ id: string }>(
+      `
+        update checkout_orders
+        set meta_purchase_sent_at = now(), updated_at = now()
+        where id = $1 and meta_purchase_sent_at is null
+        returning id
+      `,
+      [orderId],
+    );
+
+    return rows.length > 0;
+  }
+
+  async clearMetaPurchaseSent(orderId: string): Promise<void> {
+    await this.entityManager.query(
+      `
+        update checkout_orders
+        set meta_purchase_sent_at = null, updated_at = now()
         where id = $1
       `,
       [orderId],
@@ -610,6 +649,11 @@ export class SQLOrdersRepository implements IOrdersRepository {
       invoicedAt: this.toNullableDate(row.invoicedAt),
       approvedAt: this.toNullableDate(row.approvedAt),
       emailSentAt: this.toNullableDate(row.emailSentAt),
+      fbp: row.fbp,
+      fbc: row.fbc,
+      clientIpAddress: row.clientIpAddress,
+      clientUserAgent: row.clientUserAgent,
+      metaPurchaseSentAt: this.toNullableDate(row.metaPurchaseSentAt),
       createdAt: this.toDate(row.createdAt),
       updatedAt: this.toDate(row.updatedAt),
     };

@@ -20,6 +20,10 @@ import {
   IMercadoPagoGateway,
 } from "../../../core/adapters/services/mercadoPago/IMercadoPagoGateway";
 import {
+  META_CONVERSIONS_GATEWAY,
+  IMetaConversionsGateway,
+} from "../../../core/adapters/services/metaConversions/IMetaConversionsGateway";
+import {
   ORDER_EMAIL_SENDER,
   IOrderEmailSender,
 } from "../../../core/adapters/services/orderEmail/IOrderEmailSender";
@@ -51,18 +55,21 @@ import { MercadoPagoWebhookService } from "../../services/webhooks/MercadoPagoWe
         orderEventsRepository: IOrderEventsRepository,
         orderEmailSender: IOrderEmailSender,
         releaseOrderStockInteractor: ReleaseOrderStockInteractor,
+        metaConversionsGateway: IMetaConversionsGateway,
       ) =>
         new ApplyMercadoPagoPaymentToOrderInteractor(
           ordersRepository,
           orderEventsRepository,
           orderEmailSender,
           releaseOrderStockInteractor,
+          metaConversionsGateway,
         ),
       inject: [
         ORDERS_REPOSITORY,
         ORDER_EVENTS_REPOSITORY,
         ORDER_EMAIL_SENDER,
         ReleaseOrderStockInteractor,
+        META_CONVERSIONS_GATEWAY,
       ],
     },
     {

@@ -28,6 +28,10 @@ import {
   MERCADO_PAGO_GATEWAY,
 } from "../../../core/adapters/services/mercadoPago/IMercadoPagoGateway";
 import {
+  IMetaConversionsGateway,
+  META_CONVERSIONS_GATEWAY,
+} from "../../../core/adapters/services/metaConversions/IMetaConversionsGateway";
+import {
   IOrderEmailSender,
   ORDER_EMAIL_SENDER,
 } from "../../../core/adapters/services/orderEmail/IOrderEmailSender";
@@ -101,18 +105,21 @@ import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
         orderEventsRepository: IOrderEventsRepository,
         orderEmailSender: IOrderEmailSender,
         releaseOrderStockInteractor: ReleaseOrderStockInteractor,
+        metaConversionsGateway: IMetaConversionsGateway,
       ) =>
         new ApplyMercadoPagoPaymentToOrderInteractor(
           ordersRepository,
           orderEventsRepository,
           orderEmailSender,
           releaseOrderStockInteractor,
+          metaConversionsGateway,
         ),
       inject: [
         ORDERS_REPOSITORY,
         ORDER_EVENTS_REPOSITORY,
         ORDER_EMAIL_SENDER,
         ReleaseOrderStockInteractor,
+        META_CONVERSIONS_GATEWAY,
       ],
     },
     {

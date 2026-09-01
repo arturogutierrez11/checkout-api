@@ -37,6 +37,12 @@ export interface CreateOrderInput {
     cuit: string | null;
     businessName: string | null;
   };
+  tracking?: {
+    fbp: string | null;
+    fbc: string | null;
+    clientIpAddress: string | null;
+    clientUserAgent: string | null;
+  };
 }
 
 export interface CreateOrderResult {
@@ -128,6 +134,10 @@ export class CreateOrderInteractor {
       isBusinessPurchase: input.billing.isBusinessPurchase,
       billingCuit: input.billing.cuit,
       billingBusinessName: input.billing.businessName,
+      fbp: input.tracking?.fbp ?? null,
+      fbc: input.tracking?.fbc ?? null,
+      clientIpAddress: input.tracking?.clientIpAddress ?? null,
+      clientUserAgent: input.tracking?.clientUserAgent ?? null,
     });
     const orderId = order.id;
 

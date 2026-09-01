@@ -128,6 +128,10 @@ export class CreateManualOrderInteractor {
       isBusinessPurchase: input.billing.isBusinessPurchase ?? false,
       billingCuit: input.billing.cuit ?? null,
       billingBusinessName: input.billing.businessName ?? null,
+      fbp: null,
+      fbc: null,
+      clientIpAddress: null,
+      clientUserAgent: null,
       manualPaymentMethod: input.manualPaymentMethod,
       manualPaymentNote: input.manualPaymentNote,
     });

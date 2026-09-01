@@ -28,4 +28,7 @@ export const env = {
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean),
+  metaPixelId: process.env.META_PIXEL_ID,
+  metaAccessToken: process.env.META_ACCESS_TOKEN,
+  metaTestEventCode: process.env.META_TEST_EVENT_CODE,
 };

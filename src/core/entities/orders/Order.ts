@@ -79,6 +79,13 @@ export interface Order {
   approvedAt: Date | null;
   emailSentAt: Date | null;
 
+  /** Capturados en el checkout (no en el webhook de MP) para atribución de Meta Ads. */
+  fbp: string | null;
+  fbc: string | null;
+  clientIpAddress: string | null;
+  clientUserAgent: string | null;
+  metaPurchaseSentAt: Date | null;
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -115,6 +122,11 @@ export interface CreateOrderData {
   isBusinessPurchase: boolean;
   billingCuit: string | null;
   billingBusinessName: string | null;
+
+  fbp: string | null;
+  fbc: string | null;
+  clientIpAddress: string | null;
+  clientUserAgent: string | null;
 }
 
 export interface CreateManualOrderData extends CreateOrderData {

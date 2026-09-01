@@ -4,6 +4,7 @@ import {
   IsEmail,
   IsIn,
   IsInt,
+  IsOptional,
   IsString,
   Matches,
   Max,
@@ -67,6 +68,13 @@ export class BillingDto {
   businessName?: string;
 }
 
+export class TrackingDto {
+  @IsOptional() @IsString() fbp?: string;
+  @IsOptional() @IsString() fbc?: string;
+  @IsOptional() @IsString() clientIpAddress?: string;
+  @IsOptional() @IsString() clientUserAgent?: string;
+}
+
 export class CreateOrderDto {
   @IsString() @MaxLength(60) productSlug!: string;
 
@@ -85,4 +93,9 @@ export class CreateOrderDto {
   @ValidateNested()
   @Type(() => BillingDto)
   billing!: BillingDto;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => TrackingDto)
+  tracking?: TrackingDto;
 }

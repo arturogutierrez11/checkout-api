@@ -70,6 +70,12 @@ export class OrdersController {
           cuit: body.billing.cuit ?? null,
           businessName: body.billing.businessName ?? null,
         },
+        tracking: {
+          fbp: body.tracking?.fbp ?? null,
+          fbc: body.tracking?.fbc ?? null,
+          clientIpAddress: body.tracking?.clientIpAddress ?? null,
+          clientUserAgent: body.tracking?.clientUserAgent ?? null,
+        },
       },
       idempotencyKey,
     );
