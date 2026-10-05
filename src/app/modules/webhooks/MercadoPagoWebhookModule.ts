@@ -29,6 +29,7 @@ import {
 } from "../../../core/adapters/services/orderEmail/IOrderEmailSender";
 import { ReleaseOrderStockInteractor } from "../../../core/interactors/inventory/ReleaseOrderStockInteractor";
 import { ApplyMercadoPagoPaymentToOrderInteractor } from "../../../core/interactors/orders/ApplyMercadoPagoPaymentToOrderInteractor";
+import { NotifyOrderApprovedInteractor } from "../../../core/interactors/orders/NotifyOrderApprovedInteractor";
 import { ProcessMercadoPagoWebhookInteractor } from "../../../core/interactors/webhooks/ProcessMercadoPagoWebhookInteractor";
 import { MercadoPagoWebhookController } from "../../controllers/webhooks/MercadoPagoWebhookController";
 import { MercadoPagoWebhookService } from "../../services/webhooks/MercadoPagoWebhookService";
@@ -49,27 +50,45 @@ import { MercadoPagoWebhookService } from "../../services/webhooks/MercadoPagoWe
       inject: [INVENTORY_MOVEMENTS_REPOSITORY, PRODUCT_STOCK_REPOSITORY],
     },
     {
-      provide: ApplyMercadoPagoPaymentToOrderInteractor,
+      provide: NotifyOrderApprovedInteractor,
       useFactory: (
         ordersRepository: IOrdersRepository,
         orderEventsRepository: IOrderEventsRepository,
         orderEmailSender: IOrderEmailSender,
-        releaseOrderStockInteractor: ReleaseOrderStockInteractor,
         metaConversionsGateway: IMetaConversionsGateway,
       ) =>
-        new ApplyMercadoPagoPaymentToOrderInteractor(
+        new NotifyOrderApprovedInteractor(
           ordersRepository,
           orderEventsRepository,
           orderEmailSender,
-          releaseOrderStockInteractor,
           metaConversionsGateway,
         ),
       inject: [
         ORDERS_REPOSITORY,
         ORDER_EVENTS_REPOSITORY,
         ORDER_EMAIL_SENDER,
-        ReleaseOrderStockInteractor,
         META_CONVERSIONS_GATEWAY,
+      ],
+    },
+    {
+      provide: ApplyMercadoPagoPaymentToOrderInteractor,
+      useFactory: (
+        ordersRepository: IOrdersRepository,
+        orderEventsRepository: IOrderEventsRepository,
+        releaseOrderStockInteractor: ReleaseOrderStockInteractor,
+        notifyOrderApprovedInteractor: NotifyOrderApprovedInteractor,
+      ) =>
+        new ApplyMercadoPagoPaymentToOrderInteractor(
+          ordersRepository,
+          orderEventsRepository,
+          releaseOrderStockInteractor,
+          notifyOrderApprovedInteractor,
+        ),
+      inject: [
+        ORDERS_REPOSITORY,
+        ORDER_EVENTS_REPOSITORY,
+        ReleaseOrderStockInteractor,
+        NotifyOrderApprovedInteractor,
       ],
     },
     {

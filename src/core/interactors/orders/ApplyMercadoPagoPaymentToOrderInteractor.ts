@@ -1,10 +1,9 @@
 import { IOrderEventsRepository } from "../../adapters/repositories/orderEvents/IOrderEventsRepository";
 import { IOrdersRepository } from "../../adapters/repositories/orders/IOrdersRepository";
 import { MercadoPagoPayment } from "../../adapters/services/mercadoPago/IMercadoPagoGateway";
-import { IMetaConversionsGateway } from "../../adapters/services/metaConversions/IMetaConversionsGateway";
-import { IOrderEmailSender } from "../../adapters/services/orderEmail/IOrderEmailSender";
 import { Order } from "../../entities/orders/Order";
 import { ReleaseOrderStockInteractor } from "../inventory/ReleaseOrderStockInteractor";
+import { NotifyOrderApprovedInteractor } from "./NotifyOrderApprovedInteractor";
 
 function mapMpStatusToOrderStatus(
   mpStatus: string,
@@ -26,9 +25,8 @@ export class ApplyMercadoPagoPaymentToOrderInteractor {
   constructor(
     private readonly ordersRepository: IOrdersRepository,
     private readonly orderEventsRepository: IOrderEventsRepository,
-    private readonly orderEmailSender: IOrderEmailSender,
     private readonly releaseOrderStockInteractor: ReleaseOrderStockInteractor,
-    private readonly metaConversionsGateway: IMetaConversionsGateway,
+    private readonly notifyOrderApprovedInteractor: NotifyOrderApprovedInteractor,
   ) {}
 
   async execute(order: Order, payment: MercadoPagoPayment): Promise<void> {
@@ -79,47 +77,7 @@ export class ApplyMercadoPagoPaymentToOrderInteractor {
     }
 
     if (nextStatus === "approved") {
-      const shouldSendEmail = await this.ordersRepository.markEmailSent(
-        order.id,
-      );
-      const shouldSendMetaPurchase =
-        await this.ordersRepository.markMetaPurchaseSent(order.id);
-
-      if (shouldSendEmail || shouldSendMetaPurchase) {
-        const updatedOrder = await this.ordersRepository.getById(order.id);
-
-        if (updatedOrder) {
-          if (shouldSendEmail) {
-            try {
-              await this.orderEmailSender.sendOrderConfirmation(updatedOrder);
-            } catch (err) {
-              await this.orderEventsRepository.append({
-                orderId: order.id,
-                eventType: "email_failed",
-                payload: {
-                  message: err instanceof Error ? err.message : String(err),
-                },
-              });
-              await this.ordersRepository.clearEmailSent(order.id);
-            }
-          }
-
-          if (shouldSendMetaPurchase) {
-            try {
-              await this.metaConversionsGateway.sendPurchaseEvent(updatedOrder);
-            } catch (err) {
-              await this.orderEventsRepository.append({
-                orderId: order.id,
-                eventType: "meta_purchase_failed",
-                payload: {
-                  message: err instanceof Error ? err.message : String(err),
-                },
-              });
-              await this.ordersRepository.clearMetaPurchaseSent(order.id);
-            }
-          }
-        }
-      }
+      await this.notifyOrderApprovedInteractor.execute(order.id);
     }
   }
 }

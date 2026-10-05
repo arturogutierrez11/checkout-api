@@ -28,6 +28,11 @@ export const env = {
     .split(",")
     .map((origin) => origin.trim())
     .filter(Boolean),
+  bankTransferHolder: process.env.BANK_TRANSFER_HOLDER,
+  bankTransferBank: process.env.BANK_TRANSFER_BANK,
+  bankTransferCbu: process.env.BANK_TRANSFER_CBU,
+  bankTransferAlias: process.env.BANK_TRANSFER_ALIAS,
+  bankTransferCuit: process.env.BANK_TRANSFER_CUIT,
   metaPixelId: process.env.META_PIXEL_ID,
   metaAccessToken: process.env.META_ACCESS_TOKEN,
   metaTestEventCode: process.env.META_TEST_EVENT_CODE,

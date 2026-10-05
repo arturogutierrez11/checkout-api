@@ -1,7 +1,13 @@
 export type OrderStatus =
   "pending" | "approved" | "rejected" | "cancelled" | "payment_init_failed";
 
-export type SalesChannel = "mercadopago" | "manual";
+export type SalesChannel = "mercadopago" | "manual" | "bank_transfer";
+
+/** Canales que el comprador puede elegir en el checkout web. */
+export type CheckoutPaymentMethod = Extract<
+  SalesChannel,
+  "mercadopago" | "bank_transfer"
+>;
 
 export type ShippingMethod = "standard" | "express";
 
@@ -19,6 +25,8 @@ export interface Order {
   quantity: number;
   currency: string;
   subtotal: number;
+  /** Descuento aplicado sobre el subtotal (ej. 10% por transferencia). total = subtotal - discountAmount + shippingPrice. */
+  discountAmount: number;
 
   shippingMethod: ShippingMethod;
   shippingPrice: number;
@@ -94,6 +102,8 @@ export interface Order {
 }
 
 export interface CreateOrderData {
+  salesChannel: CheckoutPaymentMethod;
+  discountAmount: number;
   productId: string;
   productSku: string;
   productName: string;
@@ -135,7 +145,10 @@ export interface CreateOrderData {
   clientUserAgent: string | null;
 }
 
-export interface CreateManualOrderData extends CreateOrderData {
+export interface CreateManualOrderData extends Omit<
+  CreateOrderData,
+  "salesChannel" | "discountAmount"
+> {
   manualPaymentMethod: string;
   manualPaymentNote: string | null;
 }

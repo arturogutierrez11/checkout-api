@@ -135,6 +135,14 @@ export class ResendOrderEmailSender implements IOrderEmailSender {
       },
       { label: "Envío", value: `${escapeHtml(shippingLabel)}` },
       { label: "Dirección", value: escapeHtml(addressLine) },
+      ...(order.discountAmount > 0
+        ? [
+            {
+              label: "Descuento por transferencia",
+              value: `−${formatCurrency(order.discountAmount, order.currency)}`,
+            },
+          ]
+        : []),
       { label: "Total pagado", value: total },
       { label: "N° de orden", value: escapeHtml(order.id) },
       order.salesChannel === "manual"
@@ -142,11 +150,19 @@ export class ResendOrderEmailSender implements IOrderEmailSender {
             label: "Medio de pago",
             value: escapeHtml(order.manualPaymentMethod ?? "—"),
           }
-        : {
-            label: "N° de pago Mercado Pago",
-            value: escapeHtml(order.mpPaymentId ?? "—"),
-          },
+        : order.salesChannel === "bank_transfer"
+          ? { label: "Medio de pago", value: "Transferencia bancaria" }
+          : {
+              label: "N° de pago Mercado Pago",
+              value: escapeHtml(order.mpPaymentId ?? "—"),
+            },
     ];
+    const paymentLine =
+      order.salesChannel === "manual"
+        ? `Medio de pago: ${order.manualPaymentMethod ?? ""}`
+        : order.salesChannel === "bank_transfer"
+          ? "Medio de pago: transferencia bancaria"
+          : `Pago MP: ${order.mpPaymentId ?? ""}`;
 
     await Promise.all([
       this.send({
@@ -170,7 +186,7 @@ export class ResendOrderEmailSender implements IOrderEmailSender {
         to: [env.resendOrdersNotifyTo],
         reply_to: order.customerEmail,
         subject: `[Pedido pago] ${order.productName} — ${order.customerFirstName} ${order.customerLastName}`,
-        text: `Nuevo pedido pago${order.salesChannel === "manual" ? " (venta manual)" : ""}.\n\nCliente: ${order.customerFirstName} ${order.customerLastName} (${order.customerEmail}, ${order.customerPhone})\n\n${order.productName} x${order.quantity}\n${shippingLabel}\nDirección: ${addressLine}\nTotal: ${total}\nOrden: ${order.id}\n${order.salesChannel === "manual" ? `Medio de pago: ${order.manualPaymentMethod ?? ""}` : `Pago MP: ${order.mpPaymentId ?? ""}`}`,
+        text: `Nuevo pedido pago${order.salesChannel === "manual" ? " (venta manual)" : ""}.\n\nCliente: ${order.customerFirstName} ${order.customerLastName} (${order.customerEmail}, ${order.customerPhone})\n\n${order.productName} x${order.quantity}\n${shippingLabel}\nDirección: ${addressLine}\nTotal: ${total}\nOrden: ${order.id}\n${paymentLine}`,
         html: emailShell({
           preheader: `Nuevo pedido pago de ${order.customerFirstName} ${order.customerLastName} — ${total}`,
           eyebrow: "Panel interno",
@@ -183,6 +199,101 @@ export class ResendOrderEmailSender implements IOrderEmailSender {
         tags: [
           { name: "source", value: "checkout_api" },
           { name: "type", value: "order_notification" },
+        ],
+      }),
+    ]);
+  }
+
+  async sendTransferInstructions(order: Order): Promise<void> {
+    const total = formatCurrency(order.total, order.currency);
+    const discount = formatCurrency(order.discountAmount, order.currency);
+    const unitParts = [
+      order.shippingFloor ? `Piso ${order.shippingFloor}` : null,
+      order.shippingApartment ? `Depto ${order.shippingApartment}` : null,
+    ].filter(Boolean);
+    const street = unitParts.length
+      ? `${order.shippingAddress} (${unitParts.join(", ")})`
+      : order.shippingAddress;
+    const addressLine = `${street}, ${order.shippingCity}, ${order.shippingProvince} (${order.shippingPostalCode})`;
+
+    const bankRows: SummaryRow[] = [
+      { label: "Importe a transferir", value: total },
+      ...(env.bankTransferHolder
+        ? [{ label: "Titular", value: escapeHtml(env.bankTransferHolder) }]
+        : []),
+      ...(env.bankTransferCuit
+        ? [{ label: "CUIT/CUIL", value: escapeHtml(env.bankTransferCuit) }]
+        : []),
+      ...(env.bankTransferBank
+        ? [{ label: "Banco", value: escapeHtml(env.bankTransferBank) }]
+        : []),
+      ...(env.bankTransferCbu
+        ? [{ label: "CBU", value: escapeHtml(env.bankTransferCbu) }]
+        : []),
+      ...(env.bankTransferAlias
+        ? [{ label: "Alias", value: escapeHtml(env.bankTransferAlias) }]
+        : []),
+      { label: "N° de orden", value: escapeHtml(order.id) },
+    ];
+
+    const orderRows: SummaryRow[] = [
+      {
+        label: "Producto",
+        value: `${escapeHtml(order.productName)} × ${order.quantity}`,
+      },
+      { label: "Dirección", value: escapeHtml(addressLine) },
+      {
+        label: "Descuento por transferencia",
+        value: `−${discount}`,
+      },
+      { label: "Total a transferir", value: total },
+      { label: "N° de orden", value: escapeHtml(order.id) },
+    ];
+
+    const bankText = [
+      `Importe: ${total}`,
+      env.bankTransferHolder ? `Titular: ${env.bankTransferHolder}` : null,
+      env.bankTransferBank ? `Banco: ${env.bankTransferBank}` : null,
+      env.bankTransferCbu ? `CBU: ${env.bankTransferCbu}` : null,
+      env.bankTransferAlias ? `Alias: ${env.bankTransferAlias}` : null,
+    ]
+      .filter(Boolean)
+      .join("\n");
+
+    await Promise.all([
+      this.send({
+        to: [order.customerEmail],
+        subject: "Tu pedido está reservado: datos para transferir — Rituo",
+        text: `Hola ${order.customerFirstName}, recibimos tu pedido de ${order.productName}. Para completarlo, transferí ${total} (ya incluye el 10% de descuento) a:\n\n${bankText}\n\nCuando hayas transferido, respondé este email con el comprobante indicando tu N° de orden: ${order.id}. Apenas acreditemos el pago, te confirmamos y coordinamos el envío.`,
+        html: emailShell({
+          preheader: `Transferí ${total} para completar tu pedido — ya incluye el 10% de descuento.`,
+          eyebrow: "Pedido recibido",
+          heading: `¡Gracias, ${escapeHtml(order.customerFirstName)}! Falta tu transferencia`,
+          intro: `Tu pedido quedó reservado. Transferí el importe a la cuenta de abajo (ya incluye el <strong style="color:${INK};">10% de descuento</strong>) y respondé este email con el comprobante, indicando tu N° de orden. Apenas acreditemos el pago te confirmamos y coordinamos el envío.`,
+          bodyHtml: summaryTable(bankRows),
+        }),
+        tags: [
+          { name: "source", value: "checkout_api" },
+          { name: "type", value: "transfer_instructions" },
+        ],
+      }),
+      this.send({
+        to: [env.resendOrdersNotifyTo],
+        reply_to: order.customerEmail,
+        subject: `[Transferencia pendiente] ${order.productName} — ${order.customerFirstName} ${order.customerLastName}`,
+        text: `Pedido por transferencia esperando acreditación.\n\nCliente: ${order.customerFirstName} ${order.customerLastName} (${order.customerEmail}, ${order.customerPhone})\n\n${order.productName} x${order.quantity}\nDirección: ${addressLine}\nTotal a recibir: ${total} (descuento ${discount})\nOrden: ${order.id}\n\nCuando la transferencia esté acreditada, confirmala desde el panel de admin.`,
+        html: emailShell({
+          preheader: `Transferencia pendiente de ${order.customerFirstName} ${order.customerLastName} — ${total}`,
+          eyebrow: "Panel interno",
+          heading: "Pedido por transferencia pendiente",
+          intro: `<strong style="color:${INK};">${escapeHtml(order.customerFirstName)} ${escapeHtml(order.customerLastName)}</strong> — ${escapeHtml(order.customerEmail)} · ${escapeHtml(order.customerPhone)}`,
+          bodyHtml: summaryTable(orderRows),
+          footerNote:
+            "Cuando se acredite la transferencia, tocá «Confirmar transferencia» en el panel de admin para aprobar el pedido.",
+        }),
+        tags: [
+          { name: "source", value: "checkout_api" },
+          { name: "type", value: "transfer_notification" },
         ],
       }),
     ]);

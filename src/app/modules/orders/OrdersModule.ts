@@ -41,6 +41,8 @@ import {
 } from "../../../core/adapters/services/zipnova/IZipnovaGateway";
 import { ReleaseOrderStockInteractor } from "../../../core/interactors/inventory/ReleaseOrderStockInteractor";
 import { ApplyMercadoPagoPaymentToOrderInteractor } from "../../../core/interactors/orders/ApplyMercadoPagoPaymentToOrderInteractor";
+import { NotifyOrderApprovedInteractor } from "../../../core/interactors/orders/NotifyOrderApprovedInteractor";
+import { ConfirmBankTransferInteractor } from "../../../core/interactors/orders/ConfirmBankTransferInteractor";
 import { AssignOrderDispatcherInteractor } from "../../../core/interactors/orders/AssignOrderDispatcherInteractor";
 import { CancelOrderInteractor } from "../../../core/interactors/orders/CancelOrderInteractor";
 import { CreateManualOrderInteractor } from "../../../core/interactors/orders/CreateManualOrderInteractor";
@@ -99,27 +101,45 @@ import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
       ],
     },
     {
-      provide: ApplyMercadoPagoPaymentToOrderInteractor,
+      provide: NotifyOrderApprovedInteractor,
       useFactory: (
         ordersRepository: IOrdersRepository,
         orderEventsRepository: IOrderEventsRepository,
         orderEmailSender: IOrderEmailSender,
-        releaseOrderStockInteractor: ReleaseOrderStockInteractor,
         metaConversionsGateway: IMetaConversionsGateway,
       ) =>
-        new ApplyMercadoPagoPaymentToOrderInteractor(
+        new NotifyOrderApprovedInteractor(
           ordersRepository,
           orderEventsRepository,
           orderEmailSender,
-          releaseOrderStockInteractor,
           metaConversionsGateway,
         ),
       inject: [
         ORDERS_REPOSITORY,
         ORDER_EVENTS_REPOSITORY,
         ORDER_EMAIL_SENDER,
-        ReleaseOrderStockInteractor,
         META_CONVERSIONS_GATEWAY,
+      ],
+    },
+    {
+      provide: ApplyMercadoPagoPaymentToOrderInteractor,
+      useFactory: (
+        ordersRepository: IOrdersRepository,
+        orderEventsRepository: IOrderEventsRepository,
+        releaseOrderStockInteractor: ReleaseOrderStockInteractor,
+        notifyOrderApprovedInteractor: NotifyOrderApprovedInteractor,
+      ) =>
+        new ApplyMercadoPagoPaymentToOrderInteractor(
+          ordersRepository,
+          orderEventsRepository,
+          releaseOrderStockInteractor,
+          notifyOrderApprovedInteractor,
+        ),
+      inject: [
+        ORDERS_REPOSITORY,
+        ORDER_EVENTS_REPOSITORY,
+        ReleaseOrderStockInteractor,
+        NotifyOrderApprovedInteractor,
       ],
     },
     {
@@ -130,6 +150,7 @@ import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
         ordersRepository: IOrdersRepository,
         orderEventsRepository: IOrderEventsRepository,
         mercadoPagoGateway: IMercadoPagoGateway,
+        orderEmailSender: IOrderEmailSender,
       ) =>
         new CreateOrderInteractor(
           productsRepository,
@@ -137,6 +158,7 @@ import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
           ordersRepository,
           orderEventsRepository,
           mercadoPagoGateway,
+          orderEmailSender,
         ),
       inject: [
         PRODUCTS_REPOSITORY,
@@ -144,6 +166,7 @@ import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
         ORDERS_REPOSITORY,
         ORDER_EVENTS_REPOSITORY,
         MERCADO_PAGO_GATEWAY,
+        ORDER_EMAIL_SENDER,
       ],
     },
     {
@@ -198,6 +221,24 @@ import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
         ORDERS_REPOSITORY,
         ReleaseOrderStockInteractor,
         ORDER_EVENTS_REPOSITORY,
+      ],
+    },
+    {
+      provide: ConfirmBankTransferInteractor,
+      useFactory: (
+        ordersRepository: IOrdersRepository,
+        orderEventsRepository: IOrderEventsRepository,
+        notifyOrderApprovedInteractor: NotifyOrderApprovedInteractor,
+      ) =>
+        new ConfirmBankTransferInteractor(
+          ordersRepository,
+          orderEventsRepository,
+          notifyOrderApprovedInteractor,
+        ),
+      inject: [
+        ORDERS_REPOSITORY,
+        ORDER_EVENTS_REPOSITORY,
+        NotifyOrderApprovedInteractor,
       ],
     },
     {

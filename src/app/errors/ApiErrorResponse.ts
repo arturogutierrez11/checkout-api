@@ -4,6 +4,8 @@ export const ApiErrorCode = {
   paymentPreferenceCreationFailed: "PAYMENT_PREFERENCE_CREATION_FAILED",
   orderNotFound: "ORDER_NOT_FOUND",
   orderNotCancellable: "ORDER_NOT_CANCELLABLE",
+  orderNotTransferConfirmable: "ORDER_NOT_TRANSFER_CONFIRMABLE",
+  bankTransferUnavailable: "BANK_TRANSFER_UNAVAILABLE",
   orderNotShippable: "ORDER_NOT_SHIPPABLE",
   orderNotReturnable: "ORDER_NOT_RETURNABLE",
   shippingQuoteUnavailable: "SHIPPING_QUOTE_UNAVAILABLE",

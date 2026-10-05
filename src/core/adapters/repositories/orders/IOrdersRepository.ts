@@ -38,6 +38,8 @@ export interface IOrdersRepository {
     orderId: string,
     mp: UpdateMpPaymentInfoData,
   ): Promise<void>;
+  /** Atomic: only approves a bank-transfer order that is still 'pending' (admin confirmed the money arrived). Returns whether it did. */
+  approveBankTransfer(orderId: string): Promise<boolean>;
   /** Atomic: only sets email_sent_at if it was still null. Returns whether it did. */
   markEmailSent(orderId: string): Promise<boolean>;
   clearEmailSent(orderId: string): Promise<void>;

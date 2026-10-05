@@ -1,4 +1,5 @@
 import {
+  ServiceUnavailableException,
   BadGatewayException,
   BadRequestException,
   ConflictException,
@@ -14,6 +15,8 @@ import {
   CreateManualOrderInput,
   CreateManualOrderInteractor,
 } from "../../../core/interactors/orders/CreateManualOrderInteractor";
+import { ConfirmBankTransferInteractor } from "../../../core/interactors/orders/ConfirmBankTransferInteractor";
+import { OrderNotTransferConfirmableError } from "../../../core/interactors/orders/OrderNotTransferConfirmableError";
 import { GetOrderInteractor } from "../../../core/interactors/orders/GetOrderInteractor";
 import {
   ListOrdersFilter,
@@ -49,6 +52,7 @@ import {
 } from "../../../core/entities/orders/Order";
 import { ApiErrorCode, apiError } from "../../errors/ApiErrorResponse";
 import { IdempotencyService } from "../idempotency/IdempotencyService";
+import { env } from "../../../config/env";
 
 @Injectable()
 export class OrdersService {
@@ -58,6 +62,7 @@ export class OrdersService {
     private readonly getOrderInteractor: GetOrderInteractor,
     private readonly listOrdersInteractor: ListOrdersInteractor,
     private readonly cancelOrderInteractor: CancelOrderInteractor,
+    private readonly confirmBankTransferInteractor: ConfirmBankTransferInteractor,
     private readonly markOrderShippedInteractor: MarkOrderShippedInteractor,
     private readonly generateShippingLabelInteractor: GenerateShippingLabelInteractor,
     private readonly resetShippingLabelInteractor: ResetShippingLabelInteractor,
@@ -79,6 +84,18 @@ export class OrdersService {
       throw new BadRequestException("Idempotency-Key header is required");
     }
 
+    if (
+      input.paymentMethod === "bank_transfer" &&
+      (!env.bankTransferCbu || !env.bankTransferHolder)
+    ) {
+      throw new ServiceUnavailableException(
+        apiError(
+          ApiErrorCode.bankTransferUnavailable,
+          "El pago por transferencia no está disponible por el momento.",
+        ),
+      );
+    }
+
     try {
       return await this.idempotencyService.execute<CreateOrderResult>({
         key: idempotencyKey,
@@ -89,7 +106,11 @@ export class OrdersService {
           const order = await this.getOrderInteractor.execute(orderId);
           return {
             orderId: order.id,
-            initPoint: order.mpInitPoint ?? "",
+            paymentMethod:
+              order.salesChannel === "bank_transfer"
+                ? "bank_transfer"
+                : "mercadopago",
+            initPoint: order.mpInitPoint,
           };
         },
         resourceId: (result) => result.orderId,
@@ -185,6 +206,24 @@ export class OrdersService {
       if (err instanceof OrderNotCancellableError) {
         throw new ConflictException(
           apiError(ApiErrorCode.orderNotCancellable, err.message),
+        );
+      }
+      throw err;
+    }
+  }
+
+  async confirmTransfer(orderId: string): Promise<Order> {
+    try {
+      return await this.confirmBankTransferInteractor.execute(orderId);
+    } catch (err) {
+      if (err instanceof OrderNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.orderNotFound, err.message),
+        );
+      }
+      if (err instanceof OrderNotTransferConfirmableError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.orderNotTransferConfirmable, err.message),
         );
       }
       throw err;

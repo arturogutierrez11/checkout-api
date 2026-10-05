@@ -3,7 +3,12 @@ import { IOrdersRepository } from "../../adapters/repositories/orders/IOrdersRep
 import { IProductStockRepository } from "../../adapters/repositories/productStock/IProductStockRepository";
 import { IProductsRepository } from "../../adapters/repositories/products/IProductsRepository";
 import { IMercadoPagoGateway } from "../../adapters/services/mercadoPago/IMercadoPagoGateway";
-import { ShippingMethod } from "../../entities/orders/Order";
+import { IOrderEmailSender } from "../../adapters/services/orderEmail/IOrderEmailSender";
+import {
+  CheckoutPaymentMethod,
+  ShippingMethod,
+} from "../../entities/orders/Order";
+import { bankTransferDiscount } from "../../entities/orders/paymentDiscounts";
 import { SHIPPING_PRICES } from "../../entities/orders/shippingPrices";
 import { CARDS_SKU, PACKAGING_SKU } from "../../entities/products/Product";
 import { InsufficientStockError } from "./InsufficientStockError";
@@ -14,6 +19,8 @@ export interface CreateOrderInput {
   productSlug: string;
   quantity: number;
   shippingMethod: ShippingMethod;
+  /** Defaults to Mercado Pago when omitted. */
+  paymentMethod?: CheckoutPaymentMethod;
   customer: {
     firstName: string;
     lastName: string;
@@ -50,7 +57,9 @@ export interface CreateOrderInput {
 
 export interface CreateOrderResult {
   orderId: string;
-  initPoint: string;
+  paymentMethod: CheckoutPaymentMethod;
+  /** Mercado Pago checkout URL. Null for bank-transfer orders (nothing to redirect to). */
+  initPoint: string | null;
 }
 
 /**
@@ -67,6 +76,7 @@ export class CreateOrderInteractor {
     private readonly ordersRepository: IOrdersRepository,
     private readonly orderEventsRepository: IOrderEventsRepository,
     private readonly mercadoPagoGateway: IMercadoPagoGateway,
+    private readonly orderEmailSender: IOrderEmailSender,
   ) {}
 
   async execute(input: CreateOrderInput): Promise<CreateOrderResult> {
@@ -106,7 +116,10 @@ export class CreateOrderInteractor {
       throw new InsufficientStockError(packaging.id);
     }
 
+    const paymentMethod = input.paymentMethod ?? "mercadopago";
     const subtotal = product.price * input.quantity;
+    const discountAmount =
+      paymentMethod === "bank_transfer" ? bankTransferDiscount(subtotal) : 0;
     const shippingPrice = SHIPPING_PRICES[input.shippingMethod];
 
     const order = await this.ordersRepository.create({
@@ -119,7 +132,9 @@ export class CreateOrderInteractor {
       subtotal,
       shippingMethod: input.shippingMethod,
       shippingPrice,
-      total: subtotal + shippingPrice,
+      total: subtotal - discountAmount + shippingPrice,
+      salesChannel: paymentMethod,
+      discountAmount,
       customerFirstName: input.customer.firstName,
       customerLastName: input.customer.lastName,
       customerEmail: input.customer.email,
@@ -147,6 +162,30 @@ export class CreateOrderInteractor {
     });
     const orderId = order.id;
 
+    if (paymentMethod === "bank_transfer") {
+      await this.orderEventsRepository.append({
+        orderId,
+        eventType: "bank_transfer_order_created",
+        payload: { total: order.total, discountAmount },
+      });
+
+      try {
+        await this.orderEmailSender.sendTransferInstructions(order);
+      } catch (err) {
+        // The customer still sees the instructions on the page after
+        // checkout — a mail failure must not lose the order.
+        await this.orderEventsRepository.append({
+          orderId,
+          eventType: "transfer_email_failed",
+          payload: {
+            message: err instanceof Error ? err.message : String(err),
+          },
+        });
+      }
+
+      return { orderId, paymentMethod, initPoint: null };
+    }
+
     try {
       const preference = await this.mercadoPagoGateway.createPreference(order);
       await this.ordersRepository.setMpPreference(
@@ -160,7 +199,7 @@ export class CreateOrderInteractor {
         payload: { preferenceId: preference.id },
       });
 
-      return { orderId, initPoint: preference.initPoint };
+      return { orderId, paymentMethod, initPoint: preference.initPoint };
     } catch (err) {
       await Promise.allSettled([
         this.ordersRepository.markPaymentInitFailed(orderId),

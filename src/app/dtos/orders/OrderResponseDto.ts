@@ -1,9 +1,28 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Order } from "../../../core/entities/orders/Order";
+import { env } from "../../../config/env";
 import {
   nullableDateISOString,
   requiredDateISOString,
 } from "../common/dateResponse";
+
+export class BankTransferDetailsDto {
+  @ApiProperty({ nullable: true }) holder!: string | null;
+  @ApiProperty({ nullable: true }) bank!: string | null;
+  @ApiProperty({ nullable: true }) cuit!: string | null;
+  @ApiProperty({ nullable: true }) cbu!: string | null;
+  @ApiProperty({ nullable: true }) alias!: string | null;
+}
+
+function bankTransferDetails(): BankTransferDetailsDto {
+  return {
+    holder: env.bankTransferHolder ?? null,
+    bank: env.bankTransferBank ?? null,
+    cuit: env.bankTransferCuit ?? null,
+    cbu: env.bankTransferCbu ?? null,
+    alias: env.bankTransferAlias ?? null,
+  };
+}
 
 export class OrderResponseDto {
   @ApiProperty() id!: string;
@@ -17,6 +36,7 @@ export class OrderResponseDto {
 
   @ApiProperty() shippingMethod!: string;
   @ApiProperty() shippingPrice!: number;
+  @ApiProperty() discountAmount!: number;
   @ApiProperty() total!: number;
 
   @ApiProperty() status!: string;
@@ -50,6 +70,8 @@ export class OrderResponseDto {
   @ApiProperty({ nullable: true }) mpPaymentStatusDetail!: string | null;
 
   @ApiProperty() salesChannel!: string;
+  @ApiProperty({ nullable: true, type: BankTransferDetailsDto })
+  bankTransfer!: BankTransferDetailsDto | null;
   @ApiProperty({ nullable: true }) manualPaymentMethod!: string | null;
   @ApiProperty({ nullable: true }) manualPaymentNote!: string | null;
 
@@ -84,6 +106,7 @@ export class OrderResponseDto {
       subtotal: order.subtotal,
       shippingMethod: order.shippingMethod,
       shippingPrice: order.shippingPrice,
+      discountAmount: order.discountAmount,
       total: order.total,
       status: order.status,
       customerFirstName: order.customerFirstName,
@@ -111,6 +134,8 @@ export class OrderResponseDto {
       mpPaymentStatus: order.mpPaymentStatus,
       mpPaymentStatusDetail: order.mpPaymentStatusDetail,
       salesChannel: order.salesChannel,
+      bankTransfer:
+        order.salesChannel === "bank_transfer" ? bankTransferDetails() : null,
       manualPaymentMethod: order.manualPaymentMethod,
       manualPaymentNote: order.manualPaymentNote,
       assignedDispatcher: order.assignedDispatcher,

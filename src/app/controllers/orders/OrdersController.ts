@@ -57,6 +57,7 @@ export class OrdersController {
         productSlug: body.productSlug,
         quantity: body.quantity,
         shippingMethod: body.shippingMethod,
+        paymentMethod: body.paymentMethod,
         customer: body.customer,
         shippingAddress: body.shippingAddress,
         billing: {
@@ -156,6 +157,17 @@ export class OrdersController {
   @ApiResponse({ status: 201, type: OrderResponseDto })
   async cancel(@Param("id") id: string): Promise<OrderResponseDto> {
     const order = await this.ordersService.cancel(id);
+    return OrderResponseDto.fromEntity(order);
+  }
+
+  @Post(":id/confirm-transfer")
+  @ApiOperation({
+    summary:
+      "Confirm that a bank transfer arrived: approves the pending order and sends the confirmation email + Meta Purchase",
+  })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async confirmTransfer(@Param("id") id: string): Promise<OrderResponseDto> {
+    const order = await this.ordersService.confirmTransfer(id);
     return OrderResponseDto.fromEntity(order);
   }
 

@@ -85,6 +85,10 @@ export class CreateOrderDto {
 
   @IsIn(["standard", "express"]) shippingMethod!: "standard" | "express";
 
+  @IsOptional()
+  @IsIn(["mercadopago", "bank_transfer"])
+  paymentMethod?: "mercadopago" | "bank_transfer";
+
   @ValidateNested()
   @Type(() => CustomerDto)
   customer!: CustomerDto;

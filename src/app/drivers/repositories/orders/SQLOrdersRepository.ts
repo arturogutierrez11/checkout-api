@@ -22,6 +22,7 @@ interface OrderRow {
   quantity: number;
   currency: string;
   subtotal: string;
+  discountAmount: string;
   shippingMethod: string;
   shippingPrice: string;
   total: string;
@@ -88,6 +89,7 @@ const ORDER_COLUMNS = `
   quantity,
   currency,
   subtotal,
+  discount_amount as "discountAmount",
   shipping_method as "shippingMethod",
   shipping_price as "shippingPrice",
   total,
@@ -163,7 +165,8 @@ export class SQLOrdersRepository implements IOrdersRepository {
           billing_dni, billing_use_shipping_address, billing_address, billing_city,
           billing_province, billing_postal_code, is_business_purchase, billing_cuit,
           billing_business_name, fbp, fbc, client_ip_address, client_user_agent,
-          shipping_floor, shipping_apartment, shipping_notes
+          shipping_floor, shipping_apartment, shipping_notes,
+          sales_channel, discount_amount
         )
         values (
           $1, $2, $3, $4, $5, $6, $7,
@@ -173,7 +176,8 @@ export class SQLOrdersRepository implements IOrdersRepository {
           $19, $20, $21, $22,
           $23, $24, $25, $26,
           $27, $28, $29, $30, $31,
-          $32, $33, $34
+          $32, $33, $34,
+          $35, $36
         )
         returning ${ORDER_COLUMNS}
       `,
@@ -212,6 +216,8 @@ export class SQLOrdersRepository implements IOrdersRepository {
         data.shippingFloor,
         data.shippingApartment,
         data.shippingNotes,
+        data.salesChannel,
+        data.discountAmount,
       ],
     );
 
@@ -401,6 +407,20 @@ export class SQLOrdersRepository implements IOrdersRepository {
       `,
       [orderId, mp.mpPaymentId, mp.mpPaymentStatus, mp.mpPaymentStatusDetail],
     );
+  }
+
+  async approveBankTransfer(orderId: string): Promise<boolean> {
+    const rows = await this.queryRows<{ id: string }>(
+      `
+        update checkout_orders
+        set status = 'approved', approved_at = now(), updated_at = now()
+        where id = $1 and status = 'pending' and sales_channel = 'bank_transfer'
+        returning id
+      `,
+      [orderId],
+    );
+
+    return rows.length > 0;
   }
 
   async markEmailSent(orderId: string): Promise<boolean> {
@@ -619,6 +639,7 @@ export class SQLOrdersRepository implements IOrdersRepository {
       quantity: row.quantity,
       currency: row.currency,
       subtotal: Number(row.subtotal),
+      discountAmount: Number(row.discountAmount),
       shippingMethod: row.shippingMethod as Order["shippingMethod"],
       shippingPrice: Number(row.shippingPrice),
       total: Number(row.total),
