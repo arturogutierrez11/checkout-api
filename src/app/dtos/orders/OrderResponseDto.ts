@@ -30,6 +30,9 @@ export class OrderResponseDto {
   @ApiProperty() shippingCity!: string;
   @ApiProperty() shippingProvince!: string;
   @ApiProperty() shippingPostalCode!: string;
+  @ApiProperty({ nullable: true }) shippingFloor!: string | null;
+  @ApiProperty({ nullable: true }) shippingApartment!: string | null;
+  @ApiProperty({ nullable: true }) shippingNotes!: string | null;
 
   @ApiProperty() billingDni!: string;
   @ApiProperty() billingUseShippingAddress!: boolean;
@@ -91,6 +94,9 @@ export class OrderResponseDto {
       shippingCity: order.shippingCity,
       shippingProvince: order.shippingProvince,
       shippingPostalCode: order.shippingPostalCode,
+      shippingFloor: order.shippingFloor,
+      shippingApartment: order.shippingApartment,
+      shippingNotes: order.shippingNotes,
       billingDni: order.billingDni,
       billingUseShippingAddress: order.billingUseShippingAddress,
       billingAddress: order.billingAddress,

@@ -119,7 +119,14 @@ export class ResendOrderEmailSender implements IOrderEmailSender {
     const total = formatCurrency(order.total, order.currency);
     const shippingLabel =
       order.shippingMethod === "express" ? "Envío express" : "Envío estándar";
-    const addressLine = `${order.shippingAddress}, ${order.shippingCity}, ${order.shippingProvince} (${order.shippingPostalCode})`;
+    const unitParts = [
+      order.shippingFloor ? `Piso ${order.shippingFloor}` : null,
+      order.shippingApartment ? `Depto ${order.shippingApartment}` : null,
+    ].filter(Boolean);
+    const street = unitParts.length
+      ? `${order.shippingAddress} (${unitParts.join(", ")})`
+      : order.shippingAddress;
+    const addressLine = `${street}, ${order.shippingCity}, ${order.shippingProvince} (${order.shippingPostalCode})`;
 
     const summaryRows: SummaryRow[] = [
       {

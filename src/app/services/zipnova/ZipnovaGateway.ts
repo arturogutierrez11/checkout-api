@@ -145,6 +145,9 @@ export class ZipnovaGateway implements IZipnovaGateway {
           name: input.destination.name,
           street: input.destination.street,
           street_number: input.destination.streetNumber,
+          ...(input.destination.streetExtras
+            ? { street_extras: input.destination.streetExtras }
+            : {}),
           document: input.destination.document,
           email: input.destination.email,
           phone: input.destination.phone,

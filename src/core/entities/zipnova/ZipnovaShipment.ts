@@ -2,6 +2,7 @@ export interface ZipnovaDestination {
   name: string;
   street: string;
   streetNumber: string;
+  streetExtras?: string;
   document: string;
   email: string;
   phone: string;

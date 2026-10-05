@@ -25,6 +25,9 @@ export interface CreateOrderInput {
     city: string;
     province: string;
     postalCode: string;
+    floor?: string;
+    apartment?: string;
+    notes?: string;
   };
   billing: {
     dni: string;
@@ -125,6 +128,9 @@ export class CreateOrderInteractor {
       shippingCity: input.shippingAddress.city,
       shippingProvince: input.shippingAddress.province,
       shippingPostalCode: input.shippingAddress.postalCode,
+      shippingFloor: input.shippingAddress.floor?.trim() || null,
+      shippingApartment: input.shippingAddress.apartment?.trim() || null,
+      shippingNotes: input.shippingAddress.notes?.trim() || null,
       billingDni: input.billing.dni,
       billingUseShippingAddress: input.billing.useShippingAddress,
       billingAddress: input.billing.address,

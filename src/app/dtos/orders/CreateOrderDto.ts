@@ -26,6 +26,9 @@ export class ShippingAddressDto {
   @IsString() @MaxLength(80) city!: string;
   @IsString() @MaxLength(80) province!: string;
   @IsString() @MaxLength(12) postalCode!: string;
+  @IsOptional() @IsString() @MaxLength(20) floor?: string;
+  @IsOptional() @IsString() @MaxLength(20) apartment?: string;
+  @IsOptional() @IsString() @MaxLength(300) notes?: string;
 }
 
 export class BillingDto {

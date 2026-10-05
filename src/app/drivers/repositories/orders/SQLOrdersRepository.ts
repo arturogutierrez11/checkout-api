@@ -34,6 +34,9 @@ interface OrderRow {
   shippingCity: string;
   shippingProvince: string;
   shippingPostalCode: string;
+  shippingFloor: string | null;
+  shippingApartment: string | null;
+  shippingNotes: string | null;
   billingDni: string;
   billingUseShippingAddress: boolean;
   billingAddress: string | null;
@@ -97,6 +100,9 @@ const ORDER_COLUMNS = `
   shipping_city as "shippingCity",
   shipping_province as "shippingProvince",
   shipping_postal_code as "shippingPostalCode",
+  shipping_floor as "shippingFloor",
+  shipping_apartment as "shippingApartment",
+  shipping_notes as "shippingNotes",
   billing_dni as "billingDni",
   billing_use_shipping_address as "billingUseShippingAddress",
   billing_address as "billingAddress",
@@ -156,7 +162,8 @@ export class SQLOrdersRepository implements IOrdersRepository {
           shipping_address, shipping_city, shipping_province, shipping_postal_code,
           billing_dni, billing_use_shipping_address, billing_address, billing_city,
           billing_province, billing_postal_code, is_business_purchase, billing_cuit,
-          billing_business_name, fbp, fbc, client_ip_address, client_user_agent
+          billing_business_name, fbp, fbc, client_ip_address, client_user_agent,
+          shipping_floor, shipping_apartment, shipping_notes
         )
         values (
           $1, $2, $3, $4, $5, $6, $7,
@@ -165,7 +172,8 @@ export class SQLOrdersRepository implements IOrdersRepository {
           $15, $16, $17, $18,
           $19, $20, $21, $22,
           $23, $24, $25, $26,
-          $27, $28, $29, $30, $31
+          $27, $28, $29, $30, $31,
+          $32, $33, $34
         )
         returning ${ORDER_COLUMNS}
       `,
@@ -201,6 +209,9 @@ export class SQLOrdersRepository implements IOrdersRepository {
         data.fbc,
         data.clientIpAddress,
         data.clientUserAgent,
+        data.shippingFloor,
+        data.shippingApartment,
+        data.shippingNotes,
       ],
     );
 
@@ -218,7 +229,8 @@ export class SQLOrdersRepository implements IOrdersRepository {
           billing_dni, billing_use_shipping_address, billing_address, billing_city,
           billing_province, billing_postal_code, is_business_purchase, billing_cuit,
           billing_business_name, status, sales_channel, manual_payment_method,
-          manual_payment_note, approved_at
+          manual_payment_note, approved_at,
+          shipping_floor, shipping_apartment, shipping_notes
         )
         values (
           $1, $2, $3, $4, $5, $6, $7,
@@ -228,7 +240,8 @@ export class SQLOrdersRepository implements IOrdersRepository {
           $19, $20, $21, $22,
           $23, $24, $25, $26,
           $27, 'approved', 'manual', $28,
-          $29, now()
+          $29, now(),
+          $30, $31, $32
         )
         returning ${ORDER_COLUMNS}
       `,
@@ -262,6 +275,9 @@ export class SQLOrdersRepository implements IOrdersRepository {
         data.billingBusinessName,
         data.manualPaymentMethod,
         data.manualPaymentNote,
+        data.shippingFloor,
+        data.shippingApartment,
+        data.shippingNotes,
       ],
     );
 
@@ -615,6 +631,9 @@ export class SQLOrdersRepository implements IOrdersRepository {
       shippingCity: row.shippingCity,
       shippingProvince: row.shippingProvince,
       shippingPostalCode: row.shippingPostalCode,
+      shippingFloor: row.shippingFloor,
+      shippingApartment: row.shippingApartment,
+      shippingNotes: row.shippingNotes,
       billingDni: row.billingDni,
       billingUseShippingAddress: row.billingUseShippingAddress,
       billingAddress: row.billingAddress,

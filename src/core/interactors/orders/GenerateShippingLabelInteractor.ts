@@ -85,6 +85,13 @@ export class GenerateShippingLabelInteractor {
       order.shippingAddress,
     );
 
+    const streetExtras = [
+      order.shippingFloor ? `Piso ${order.shippingFloor}` : null,
+      order.shippingApartment ? `Depto ${order.shippingApartment}` : null,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
     const created = await this.zipnovaGateway.createShipment({
       originId: originWarehouse.zipnovaOriginId,
       carrierId: cheapest.carrierId,
@@ -98,6 +105,7 @@ export class GenerateShippingLabelInteractor {
         name: `${order.customerFirstName} ${order.customerLastName}`,
         street,
         streetNumber,
+        streetExtras: streetExtras || undefined,
         document: order.billingDni,
         email: order.customerEmail,
         phone: order.customerPhone,
