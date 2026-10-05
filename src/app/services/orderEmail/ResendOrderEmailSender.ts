@@ -263,13 +263,13 @@ export class ResendOrderEmailSender implements IOrderEmailSender {
     await Promise.all([
       this.send({
         to: [order.customerEmail],
-        subject: "Tu pedido está reservado: datos para transferir — Rituo",
-        text: `Hola ${order.customerFirstName}, recibimos tu pedido de ${order.productName}. Para completarlo, transferí ${total} (ya incluye el 10% de descuento) a:\n\n${bankText}\n\nCuando hayas transferido, respondé este email con el comprobante indicando tu N° de orden: ${order.id}. Apenas acreditemos el pago, te confirmamos y coordinamos el envío.`,
+        subject: "Recibimos tu pedido: verificamos tu transferencia — Rituo",
+        text: `Hola ${order.customerFirstName}, recibimos tu pedido de ${order.productName} y estamos verificando tu transferencia de ${total} (ya incluye el 10% de descuento). Si todavía no la hiciste, estos son los datos:\n\n${bankText}\n\nRespondé este email con el comprobante indicando tu N° de orden: ${order.id}. Apenas acreditemos el pago, te confirmamos y coordinamos el envío.`,
         html: emailShell({
-          preheader: `Transferí ${total} para completar tu pedido — ya incluye el 10% de descuento.`,
+          preheader: `Estamos verificando tu transferencia de ${total} — ya incluye el 10% de descuento.`,
           eyebrow: "Pedido recibido",
-          heading: `¡Gracias, ${escapeHtml(order.customerFirstName)}! Falta tu transferencia`,
-          intro: `Tu pedido quedó reservado. Transferí el importe a la cuenta de abajo (ya incluye el <strong style="color:${INK};">10% de descuento</strong>) y respondé este email con el comprobante, indicando tu N° de orden. Apenas acreditemos el pago te confirmamos y coordinamos el envío.`,
+          heading: `¡Gracias, ${escapeHtml(order.customerFirstName)}! Verificamos tu transferencia`,
+          intro: `Recibimos tu pedido y estamos verificando tu transferencia (el importe ya incluye el <strong style="color:${INK};">10% de descuento</strong>). Respondé este email con el comprobante, indicando tu N° de orden, para acelerar la confirmación. Si todavía no transferiste, usá los datos de abajo. Apenas acreditemos el pago te confirmamos y coordinamos el envío.`,
           bodyHtml: summaryTable(bankRows),
         }),
         tags: [
@@ -281,7 +281,7 @@ export class ResendOrderEmailSender implements IOrderEmailSender {
         to: [env.resendOrdersNotifyTo],
         reply_to: order.customerEmail,
         subject: `[Transferencia pendiente] ${order.productName} — ${order.customerFirstName} ${order.customerLastName}`,
-        text: `Pedido por transferencia esperando acreditación.\n\nCliente: ${order.customerFirstName} ${order.customerLastName} (${order.customerEmail}, ${order.customerPhone})\n\n${order.productName} x${order.quantity}\nDirección: ${addressLine}\nTotal a recibir: ${total} (descuento ${discount})\nOrden: ${order.id}\n\nCuando la transferencia esté acreditada, confirmala desde el panel de admin.`,
+        text: `Pedido por transferencia: el cliente indicó que ya transfirió, falta verificar la acreditación.\n\nCliente: ${order.customerFirstName} ${order.customerLastName} (${order.customerEmail}, ${order.customerPhone})\n\n${order.productName} x${order.quantity}\nDirección: ${addressLine}\nTotal a recibir: ${total} (descuento ${discount})\nOrden: ${order.id}\n\nCuando la transferencia esté acreditada, confirmala desde el panel de admin.`,
         html: emailShell({
           preheader: `Transferencia pendiente de ${order.customerFirstName} ${order.customerLastName} — ${total}`,
           eyebrow: "Panel interno",
@@ -289,7 +289,7 @@ export class ResendOrderEmailSender implements IOrderEmailSender {
           intro: `<strong style="color:${INK};">${escapeHtml(order.customerFirstName)} ${escapeHtml(order.customerLastName)}</strong> — ${escapeHtml(order.customerEmail)} · ${escapeHtml(order.customerPhone)}`,
           bodyHtml: summaryTable(orderRows),
           footerNote:
-            "Cuando se acredite la transferencia, tocá «Confirmar transferencia» en el panel de admin para aprobar el pedido.",
+            "El cliente indicó que ya transfirió. Cuando veas la plata acreditada, tocá «Confirmar transferencia» en el panel de admin para aprobar el pedido.",
         }),
         tags: [
           { name: "source", value: "checkout_api" },

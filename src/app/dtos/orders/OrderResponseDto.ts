@@ -14,7 +14,7 @@ export class BankTransferDetailsDto {
   @ApiProperty({ nullable: true }) alias!: string | null;
 }
 
-function bankTransferDetails(): BankTransferDetailsDto {
+export function bankTransferDetails(): BankTransferDetailsDto {
   return {
     holder: env.bankTransferHolder ?? null,
     bank: env.bankTransferBank ?? null,

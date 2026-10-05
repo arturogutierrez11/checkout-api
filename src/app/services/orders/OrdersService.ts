@@ -53,6 +53,10 @@ import {
 import { ApiErrorCode, apiError } from "../../errors/ApiErrorResponse";
 import { IdempotencyService } from "../idempotency/IdempotencyService";
 import { env } from "../../../config/env";
+import {
+  BankTransferDetailsDto,
+  bankTransferDetails,
+} from "../../dtos/orders/OrderResponseDto";
 
 @Injectable()
 export class OrdersService {
@@ -84,16 +88,8 @@ export class OrdersService {
       throw new BadRequestException("Idempotency-Key header is required");
     }
 
-    if (
-      input.paymentMethod === "bank_transfer" &&
-      (!env.bankTransferCbu || !env.bankTransferHolder)
-    ) {
-      throw new ServiceUnavailableException(
-        apiError(
-          ApiErrorCode.bankTransferUnavailable,
-          "El pago por transferencia no está disponible por el momento.",
-        ),
-      );
+    if (input.paymentMethod === "bank_transfer") {
+      this.assertBankTransferConfigured();
     }
 
     try {
@@ -209,6 +205,23 @@ export class OrdersService {
         );
       }
       throw err;
+    }
+  }
+
+  /** Account details the customer transfers to, shown before any order exists. */
+  getBankTransferDetails(): BankTransferDetailsDto {
+    this.assertBankTransferConfigured();
+    return bankTransferDetails();
+  }
+
+  private assertBankTransferConfigured(): void {
+    if (!env.bankTransferCbu || !env.bankTransferHolder) {
+      throw new ServiceUnavailableException(
+        apiError(
+          ApiErrorCode.bankTransferUnavailable,
+          "El pago por transferencia no está disponible por el momento.",
+        ),
+      );
     }
   }
 

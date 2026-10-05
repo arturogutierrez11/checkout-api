@@ -23,7 +23,10 @@ import { CreateOrderDto } from "../../dtos/orders/CreateOrderDto";
 import { CreateOrderResponseDto } from "../../dtos/orders/CreateOrderResponseDto";
 import { GenerateShippingLabelDto } from "../../dtos/orders/GenerateShippingLabelDto";
 import { MarkOrderShippedDto } from "../../dtos/orders/MarkOrderShippedDto";
-import { OrderResponseDto } from "../../dtos/orders/OrderResponseDto";
+import {
+  BankTransferDetailsDto,
+  OrderResponseDto,
+} from "../../dtos/orders/OrderResponseDto";
 import { ReturnOrderDto } from "../../dtos/orders/ReturnOrderDto";
 import { SetInvoiceStatusDto } from "../../dtos/orders/SetInvoiceStatusDto";
 import { SetShippingStatusDto } from "../../dtos/orders/SetShippingStatusDto";
@@ -125,6 +128,16 @@ export class OrdersController {
   @ApiResponse({ status: 200, type: [String] })
   listDispatchers(): string[] {
     return [...DISPATCHERS];
+  }
+
+  @Get("bank-transfer-details")
+  @ApiOperation({
+    summary:
+      "Account details a customer transfers to (shown before the order is created)",
+  })
+  @ApiResponse({ status: 200, type: BankTransferDetailsDto })
+  bankTransferDetails(): BankTransferDetailsDto {
+    return this.ordersService.getBankTransferDetails();
   }
 
   @Get(":id")
