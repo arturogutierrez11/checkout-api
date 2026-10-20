@@ -25,7 +25,7 @@ export interface Order {
   quantity: number;
   currency: string;
   subtotal: number;
-  /** Descuento aplicado sobre el subtotal (ej. 10% por transferencia). total = subtotal - discountAmount + shippingPrice. */
+  /** Descuento aplicado sobre el subtotal (combo por cantidad y/o transferencia). total = subtotal - discountAmount + shippingPrice. */
   discountAmount: number;
 
   shippingMethod: ShippingMethod;

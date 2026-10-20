@@ -8,7 +8,7 @@ import {
   CheckoutPaymentMethod,
   ShippingMethod,
 } from "../../entities/orders/Order";
-import { bankTransferDiscount } from "../../entities/orders/paymentDiscounts";
+import { orderDiscount } from "../../entities/orders/paymentDiscounts";
 import { SHIPPING_PRICES } from "../../entities/orders/shippingPrices";
 import { CARDS_SKU, PACKAGING_SKU } from "../../entities/products/Product";
 import { InsufficientStockError } from "./InsufficientStockError";
@@ -118,8 +118,11 @@ export class CreateOrderInteractor {
 
     const paymentMethod = input.paymentMethod ?? "mercadopago";
     const subtotal = product.price * input.quantity;
-    const discountAmount =
-      paymentMethod === "bank_transfer" ? bankTransferDiscount(subtotal) : 0;
+    const discountAmount = orderDiscount(
+      subtotal,
+      input.quantity,
+      paymentMethod,
+    );
     const shippingPrice = SHIPPING_PRICES[input.shippingMethod];
 
     const order = await this.ordersRepository.create({

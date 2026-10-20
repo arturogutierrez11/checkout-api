@@ -138,7 +138,7 @@ export class ResendOrderEmailSender implements IOrderEmailSender {
       ...(order.discountAmount > 0
         ? [
             {
-              label: "Descuento por transferencia",
+              label: "Descuento",
               value: `−${formatCurrency(order.discountAmount, order.currency)}`,
             },
           ]
@@ -243,7 +243,7 @@ export class ResendOrderEmailSender implements IOrderEmailSender {
       },
       { label: "Dirección", value: escapeHtml(addressLine) },
       {
-        label: "Descuento por transferencia",
+        label: "Descuento",
         value: `−${discount}`,
       },
       { label: "Total a transferir", value: total },
@@ -264,12 +264,12 @@ export class ResendOrderEmailSender implements IOrderEmailSender {
       this.send({
         to: [order.customerEmail],
         subject: "Recibimos tu pedido: verificamos tu transferencia — Rituo",
-        text: `Hola ${order.customerFirstName}, recibimos tu pedido de ${order.productName} y estamos verificando tu transferencia de ${total} (ya incluye el 10% de descuento). Si todavía no la hiciste, estos son los datos:\n\n${bankText}\n\nRespondé este email con el comprobante indicando tu N° de orden: ${order.id}. Apenas acreditemos el pago, te confirmamos y coordinamos el envío.`,
+        text: `Hola ${order.customerFirstName}, recibimos tu pedido de ${order.productName} y estamos verificando tu transferencia de ${total} (ya incluye tu descuento). Si todavía no la hiciste, estos son los datos:\n\n${bankText}\n\nRespondé este email con el comprobante indicando tu N° de orden: ${order.id}. Apenas acreditemos el pago, te confirmamos y coordinamos el envío.`,
         html: emailShell({
-          preheader: `Estamos verificando tu transferencia de ${total} — ya incluye el 10% de descuento.`,
+          preheader: `Estamos verificando tu transferencia de ${total} — ya incluye tu descuento.`,
           eyebrow: "Pedido recibido",
           heading: `¡Gracias, ${escapeHtml(order.customerFirstName)}! Verificamos tu transferencia`,
-          intro: `Recibimos tu pedido y estamos verificando tu transferencia (el importe ya incluye el <strong style="color:${INK};">10% de descuento</strong>). Respondé este email con el comprobante, indicando tu N° de orden, para acelerar la confirmación. Si todavía no transferiste, usá los datos de abajo. Apenas acreditemos el pago te confirmamos y coordinamos el envío.`,
+          intro: `Recibimos tu pedido y estamos verificando tu transferencia (el importe ya incluye tu <strong style="color:${INK};">descuento</strong>). Respondé este email con el comprobante, indicando tu N° de orden, para acelerar la confirmación. Si todavía no transferiste, usá los datos de abajo. Apenas acreditemos el pago te confirmamos y coordinamos el envío.`,
           bodyHtml: summaryTable(bankRows),
         }),
         tags: [

@@ -23,14 +23,28 @@ function getAccessToken(): string {
 @Injectable()
 export class MercadoPagoGateway implements IMercadoPagoGateway {
   async createPreference(order: Order): Promise<MercadoPagoPreference> {
+    // Mercado Pago no acepta ítems con precio negativo: si hay descuento
+    // (combo por cantidad), el producto va como un único ítem con el
+    // subtotal ya descontado, para que el cobro coincida con order.total.
+    const productItem =
+      order.discountAmount > 0
+        ? {
+            id: order.productSku,
+            title: `${order.productName} × ${order.quantity}`,
+            quantity: 1,
+            unit_price: order.subtotal - order.discountAmount,
+            currency_id: order.currency,
+          }
+        : {
+            id: order.productSku,
+            title: order.productName,
+            quantity: order.quantity,
+            unit_price: order.unitPrice,
+            currency_id: order.currency,
+          };
+
     const items = [
-      {
-        id: order.productSku,
-        title: order.productName,
-        quantity: order.quantity,
-        unit_price: order.unitPrice,
-        currency_id: order.currency,
-      },
+      productItem,
       ...(order.shippingPrice > 0
         ? [
             {
