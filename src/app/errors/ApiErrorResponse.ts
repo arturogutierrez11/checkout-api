@@ -11,6 +11,7 @@ export const ApiErrorCode = {
   shippingQuoteUnavailable: "SHIPPING_QUOTE_UNAVAILABLE",
   shippingLabelNotReady: "SHIPPING_LABEL_NOT_READY",
   zipnovaRequestFailed: "ZIPNOVA_REQUEST_FAILED",
+  fullargRequestFailed: "FULLARG_REQUEST_FAILED",
   warehouseNotFound: "WAREHOUSE_NOT_FOUND",
   invalidDispatcher: "INVALID_DISPATCHER",
   idempotencyKeyReused: "IDEMPOTENCY_KEY_REUSED",

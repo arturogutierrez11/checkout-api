@@ -33,6 +33,7 @@ import { MarkOrderShippedInteractor } from "../../../core/interactors/orders/Mar
 import { ResyncOrderInteractor } from "../../../core/interactors/orders/ResyncOrderInteractor";
 import { ReturnOrderInteractor } from "../../../core/interactors/orders/ReturnOrderInteractor";
 import { SetInvoiceStatusInteractor } from "../../../core/interactors/orders/SetInvoiceStatusInteractor";
+import { SendOrderToFullargInteractor } from "../../../core/interactors/orders/SendOrderToFullargInteractor";
 import { SetShippingStatusInteractor } from "../../../core/interactors/orders/SetShippingStatusInteractor";
 import { InsufficientStockError } from "../../../core/interactors/orders/InsufficientStockError";
 import { OrderNotCancellableError } from "../../../core/interactors/orders/OrderNotCancellableError";
@@ -77,6 +78,7 @@ export class OrdersService {
     private readonly returnOrderInteractor: ReturnOrderInteractor,
     private readonly setShippingStatusInteractor: SetShippingStatusInteractor,
     private readonly setInvoiceStatusInteractor: SetInvoiceStatusInteractor,
+    private readonly sendOrderToFullargInteractor: SendOrderToFullargInteractor,
     private readonly idempotencyService: IdempotencyService,
   ) {}
 
@@ -323,6 +325,34 @@ export class OrdersService {
         apiError(
           ApiErrorCode.zipnovaRequestFailed,
           err instanceof Error ? err.message : "Zipnova request failed",
+        ),
+      );
+    }
+  }
+
+  async sendToFullarg(orderId: string): Promise<Order> {
+    try {
+      return await this.sendOrderToFullargInteractor.execute(orderId);
+    } catch (err) {
+      if (err instanceof OrderNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.orderNotFound, err.message),
+        );
+      }
+      if (err instanceof OrderNotShippableError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.orderNotShippable, err.message),
+        );
+      }
+      if (err instanceof ProductNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.productNotFound, err.message),
+        );
+      }
+      throw new BadGatewayException(
+        apiError(
+          ApiErrorCode.fullargRequestFailed,
+          err instanceof Error ? err.message : "Fullarg request failed",
         ),
       );
     }

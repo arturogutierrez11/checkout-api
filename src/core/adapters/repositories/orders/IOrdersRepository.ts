@@ -4,6 +4,7 @@ import {
   MarkShippedData,
   Order,
   OrderStatus,
+  SaveFullargOrderData,
   SaveShipmentData,
   ShippingStatus,
   UpdateMpPaymentInfoData,
@@ -17,6 +18,7 @@ export interface IOrdersRepository {
   createManual(data: CreateManualOrderData): Promise<Order>;
   getById(id: string): Promise<Order | null>;
   findByZipnovaShipmentId(shipmentId: string): Promise<Order | null>;
+  findByFullargSalesOrder(salesOrder: string): Promise<Order | null>;
   list(filter: {
     status?: OrderStatus;
     limit: number;
@@ -55,6 +57,17 @@ export interface IOrdersRepository {
     orderId: string,
     data: SaveShipmentData,
   ): Promise<boolean>;
+  /** Atomic: only saves if the order wasn't sent to Fullarg yet (idempotency). Returns whether it did. */
+  saveFullargOrder(
+    orderId: string,
+    data: SaveFullargOrderData,
+  ): Promise<boolean>;
+  /** Records the last event Fullarg reported via webhook; optionally fills carrier/tracking when it provides them. */
+  updateFullargStatus(
+    orderId: string,
+    status: string,
+    shipment?: { carrier: string | null; trackingNumber: string | null },
+  ): Promise<void>;
   /** Clears a voided Zipnova shipment so a new label can be generated. Atomic: only clears if one was actually set. Returns whether it did. */
   resetShippingLabel(orderId: string): Promise<boolean>;
   /** Pass null to unassign. Returns whether the order existed. */

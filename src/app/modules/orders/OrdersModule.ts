@@ -39,6 +39,10 @@ import {
   IZipnovaGateway,
   ZIPNOVA_GATEWAY,
 } from "../../../core/adapters/services/zipnova/IZipnovaGateway";
+import {
+  FULLARG_GATEWAY,
+  IFullargGateway,
+} from "../../../core/adapters/services/fullarg/IFullargGateway";
 import { ReleaseOrderStockInteractor } from "../../../core/interactors/inventory/ReleaseOrderStockInteractor";
 import { ApplyMercadoPagoPaymentToOrderInteractor } from "../../../core/interactors/orders/ApplyMercadoPagoPaymentToOrderInteractor";
 import { NotifyOrderApprovedInteractor } from "../../../core/interactors/orders/NotifyOrderApprovedInteractor";
@@ -59,10 +63,13 @@ import { ResyncOrderInteractor } from "../../../core/interactors/orders/ResyncOr
 import { ReturnOrderInteractor } from "../../../core/interactors/orders/ReturnOrderInteractor";
 import { SetInvoiceStatusInteractor } from "../../../core/interactors/orders/SetInvoiceStatusInteractor";
 import { SetShippingStatusInteractor } from "../../../core/interactors/orders/SetShippingStatusInteractor";
+import { SendOrderToFullargInteractor } from "../../../core/interactors/orders/SendOrderToFullargInteractor";
 import { OrdersController } from "../../controllers/orders/OrdersController";
 import { CheckoutInternalGuard } from "../../services/checkoutInternalAuth/guards/CheckoutInternalGuard";
 import { OrdersService } from "../../services/orders/OrdersService";
 import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
+import { FullargGateway } from "../../services/fullarg/FullargGateway";
+import { env } from "../../../config/env";
 
 @Module({
   controllers: [OrdersController],
@@ -394,6 +401,32 @@ import { ZipnovaGateway } from "../../services/zipnova/ZipnovaGateway";
       ) =>
         new SetInvoiceStatusInteractor(ordersRepository, orderEventsRepository),
       inject: [ORDERS_REPOSITORY, ORDER_EVENTS_REPOSITORY],
+    },
+    {
+      provide: FULLARG_GATEWAY,
+      useClass: FullargGateway,
+    },
+    {
+      provide: SendOrderToFullargInteractor,
+      useFactory: (
+        ordersRepository: IOrdersRepository,
+        productsRepository: IProductsRepository,
+        fullargGateway: IFullargGateway,
+        orderEventsRepository: IOrderEventsRepository,
+      ) =>
+        new SendOrderToFullargInteractor(
+          ordersRepository,
+          productsRepository,
+          fullargGateway,
+          orderEventsRepository,
+          env.fullargSku,
+        ),
+      inject: [
+        ORDERS_REPOSITORY,
+        PRODUCTS_REPOSITORY,
+        FULLARG_GATEWAY,
+        ORDER_EVENTS_REPOSITORY,
+      ],
     },
     CheckoutInternalGuard,
     OrdersService,

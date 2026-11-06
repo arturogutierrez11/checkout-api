@@ -81,6 +81,12 @@ export interface Order {
   /** Last raw status_code Zipnova reported via webhook (e.g. "in_transit", "out_for_delivery"). */
   shippingZipnovaStatus: string | null;
 
+  /** Id de la orden en Fullarg (3PL), si se la mandamos. Convive con Zipnova: cada orden usa uno u otro. */
+  fullargSalesOrder: string | null;
+  /** Último evento/estado que Fullarg nos avisó por webhook (ej. "shipment.dispatched"). */
+  fullargStatus: string | null;
+  fullargSentAt: Date | null;
+
   invoiceStatus: string | null;
   invoiceCae: string | null;
   invoiceType: string | null;
@@ -163,6 +169,11 @@ export interface MarkShippedData {
   carrier: string | null;
   trackingNumber: string | null;
   labelUrl: string | null;
+}
+
+export interface SaveFullargOrderData {
+  salesOrder: string;
+  status: string;
 }
 
 export interface SaveShipmentData {

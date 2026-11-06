@@ -220,6 +220,17 @@ export class OrdersController {
     return OrderResponseDto.fromEntity(order);
   }
 
+  @Post(":id/send-to-fullarg")
+  @ApiOperation({
+    summary:
+      "Send an approved order to Fullarg (3PL) so they pack and dispatch it",
+  })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async sendToFullarg(@Param("id") id: string): Promise<OrderResponseDto> {
+    const order = await this.ordersService.sendToFullarg(id);
+    return OrderResponseDto.fromEntity(order);
+  }
+
   @Post(":id/reserve-stock")
   @ApiOperation({
     summary:

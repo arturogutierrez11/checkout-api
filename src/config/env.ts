@@ -14,6 +14,14 @@ export const env = {
   zipnovaApiSecret: process.env.ZIPNOVA_API_SECRET,
   zipnovaAccountId: process.env.ZIPNOVA_ACCOUNT_ID,
   zipnovaOriginId: process.env.ZIPNOVA_ORIGIN_ID,
+  fullargBaseUrl: (
+    process.env.FULLARG_BASE_URL ?? "https://app.fullarg.com"
+  ).replace(/\/$/, ""),
+  fullargApiKey: process.env.FULLARG_API_KEY,
+  /** Código del SKU de la tarjeta Rituo ya creado en el catálogo de Fullarg. */
+  fullargSku: process.env.FULLARG_SKU,
+  /** Secret del webhook (se obtiene al registrar el endpoint en Fullarg). */
+  fullargWebhookSecret: process.env.FULLARG_WEBHOOK_SECRET,
   resendApiKey: process.env.RESEND_API_KEY,
   resendFromEmail: process.env.RESEND_FROM_EMAIL,
   resendOrdersNotifyTo: process.env.RESEND_ORDERS_NOTIFY_TO ?? "hello@rituo.io",

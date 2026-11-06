@@ -5,7 +5,10 @@ import { AppModule } from "./app/modules/app.module";
 import { env } from "./config/env";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    // Los webhooks de Fullarg se firman sobre el body crudo.
+    rawBody: true,
+  });
 
   app.useGlobalPipes(
     new ValidationPipe({

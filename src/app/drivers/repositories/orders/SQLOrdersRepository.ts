@@ -8,6 +8,7 @@ import {
   MarkShippedData,
   Order,
   OrderStatus,
+  SaveFullargOrderData,
   SaveShipmentData,
   ShippingStatus,
   UpdateMpPaymentInfoData,
@@ -64,6 +65,9 @@ interface OrderRow {
   shippingRealCost: string | null;
   shippingZipnovaShipmentId: string | null;
   shippingZipnovaStatus: string | null;
+  fullargSalesOrder: string | null;
+  fullargStatus: string | null;
+  fullargSentAt: Date | string | null;
   invoiceStatus: string | null;
   invoiceCae: string | null;
   invoiceType: string | null;
@@ -131,6 +135,9 @@ const ORDER_COLUMNS = `
   shipping_real_cost as "shippingRealCost",
   shipping_zipnova_shipment_id as "shippingZipnovaShipmentId",
   shipping_zipnova_status as "shippingZipnovaStatus",
+  fullarg_sales_order as "fullargSalesOrder",
+  fullarg_status as "fullargStatus",
+  fullarg_sent_at as "fullargSentAt",
   invoice_status as "invoiceStatus",
   invoice_cae as "invoiceCae",
   invoice_type as "invoiceType",
@@ -303,6 +310,15 @@ export class SQLOrdersRepository implements IOrdersRepository {
     const rows = await this.queryRows<OrderRow>(
       `select ${ORDER_COLUMNS} from checkout_orders where shipping_zipnova_shipment_id = $1`,
       [shipmentId],
+    );
+
+    return rows[0] ? this.mapRowToOrder(rows[0]) : null;
+  }
+
+  async findByFullargSalesOrder(salesOrder: string): Promise<Order | null> {
+    const rows = await this.queryRows<OrderRow>(
+      `select ${ORDER_COLUMNS} from checkout_orders where fullarg_sales_order = $1`,
+      [salesOrder],
     );
 
     return rows[0] ? this.mapRowToOrder(rows[0]) : null;
@@ -535,6 +551,51 @@ export class SQLOrdersRepository implements IOrdersRepository {
     return rows.length > 0;
   }
 
+  async saveFullargOrder(
+    orderId: string,
+    data: SaveFullargOrderData,
+  ): Promise<boolean> {
+    const rows = await this.queryRows<{ id: string }>(
+      `
+        update checkout_orders
+        set
+          fullarg_sales_order = $2,
+          fullarg_status = $3,
+          fullarg_sent_at = now(),
+          updated_at = now()
+        where id = $1 and fullarg_sales_order is null
+        returning id
+      `,
+      [orderId, data.salesOrder, data.status],
+    );
+
+    return rows.length > 0;
+  }
+
+  async updateFullargStatus(
+    orderId: string,
+    status: string,
+    shipment?: { carrier: string | null; trackingNumber: string | null },
+  ): Promise<void> {
+    await this.entityManager.query(
+      `
+        update checkout_orders
+        set
+          fullarg_status = $2,
+          shipping_carrier = coalesce($3, shipping_carrier),
+          shipping_tracking_number = coalesce($4, shipping_tracking_number),
+          updated_at = now()
+        where id = $1
+      `,
+      [
+        orderId,
+        status,
+        shipment?.carrier ?? null,
+        shipment?.trackingNumber ?? null,
+      ],
+    );
+  }
+
   async resetShippingLabel(orderId: string): Promise<boolean> {
     const rows = await this.queryRows<{ id: string }>(
       `
@@ -682,6 +743,9 @@ export class SQLOrdersRepository implements IOrdersRepository {
         row.shippingRealCost === null ? null : Number(row.shippingRealCost),
       shippingZipnovaShipmentId: row.shippingZipnovaShipmentId,
       shippingZipnovaStatus: row.shippingZipnovaStatus,
+      fullargSalesOrder: row.fullargSalesOrder,
+      fullargStatus: row.fullargStatus,
+      fullargSentAt: this.toNullableDate(row.fullargSentAt),
       invoiceStatus: row.invoiceStatus,
       invoiceCae: row.invoiceCae,
       invoiceType: row.invoiceType,

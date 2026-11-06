@@ -8,6 +8,7 @@ import { OrdersModule } from "./orders/OrdersModule";
 import { InventoryModule } from "./inventory/InventoryModule";
 import { MercadoPagoWebhookModule } from "./webhooks/MercadoPagoWebhookModule";
 import { ZipnovaWebhookModule } from "./webhooks/ZipnovaWebhookModule";
+import { FullargWebhookModule } from "./webhooks/FullargWebhookModule";
 import { WarehousesModule } from "./warehouses/WarehousesModule";
 
 @Module({
@@ -22,6 +23,7 @@ import { WarehousesModule } from "./warehouses/WarehousesModule";
     WarehousesModule,
     MercadoPagoWebhookModule,
     ZipnovaWebhookModule,
+    FullargWebhookModule,
   ],
 })
 export class AppModule {}
