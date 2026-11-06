@@ -8,8 +8,8 @@ import { env } from "../../../config/env";
 
 const CREATE_ORDER_PATH = "/api/method/wms_3pl.api.public_v1.create_order";
 
-/** Respuesta de create_order (docs: https://app.fullarg.com/assets/wms_3pl/help/integraciones/api-mcp.html). */
-interface FullargCreateOrderResponse {
+/** Contenido de create_order (docs: https://app.fullarg.com/assets/wms_3pl/help/integraciones/api-mcp.html). */
+interface FullargCreateOrderResult {
   ok?: number;
   created?: boolean;
   already_exists?: boolean;
@@ -17,6 +17,15 @@ interface FullargCreateOrderResponse {
   sales_order?: string;
   status?: string;
   error?: { code?: string; message?: string };
+}
+
+/**
+ * La API es un backend Frappe: todo viene envuelto en `message`
+ * (`{"message": {"ok": 1, "sales_order": ...}}`, y los errores como
+ * `{"message": {"error": {...}}, "exc_type": ...}`).
+ */
+interface FullargEnvelope extends FullargCreateOrderResult {
+  message?: FullargCreateOrderResult;
 }
 
 @Injectable()
@@ -55,10 +64,11 @@ export class FullargGateway implements IFullargGateway {
     });
 
     const text = await response.text();
-    let data: FullargCreateOrderResponse = {};
+    let data: FullargCreateOrderResult = {};
 
     try {
-      data = text ? (JSON.parse(text) as FullargCreateOrderResponse) : {};
+      const parsed = text ? (JSON.parse(text) as FullargEnvelope) : {};
+      data = parsed.message ?? parsed;
     } catch {
       // Respuesta no-JSON (ej. página de error): se reporta abajo con el texto crudo.
     }
