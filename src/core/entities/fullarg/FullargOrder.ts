@@ -5,6 +5,8 @@ export interface CreateFullargOrderInput {
   idempotencyKey: string;
   sku: string;
   quantity: number;
+  /** Operador logístico / modalidad (`shipping_method`); si falta, decide Fullarg. */
+  shippingMethod?: string;
   buyer: {
     name: string;
     email: string;

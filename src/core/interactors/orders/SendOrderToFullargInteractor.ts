@@ -35,7 +35,7 @@ export class SendOrderToFullargInteractor {
     private readonly fullargSku: string | undefined,
   ) {}
 
-  async execute(orderId: string): Promise<Order> {
+  async execute(orderId: string, shippingMethod?: string): Promise<Order> {
     const order = await this.ordersRepository.getById(orderId);
 
     if (!order) {
@@ -69,6 +69,7 @@ export class SendOrderToFullargInteractor {
       idempotencyKey: `rituo-${order.id}`,
       sku: this.fullargSku,
       quantity: cardUnits,
+      shippingMethod: shippingMethod?.trim() || undefined,
       buyer: {
         name: `${order.customerFirstName} ${order.customerLastName}`.trim(),
         email: order.customerEmail,
@@ -96,6 +97,7 @@ export class SendOrderToFullargInteractor {
         status: created.status,
         alreadyExisted: created.alreadyExisted,
         cardUnits,
+        shippingMethod: shippingMethod?.trim() || null,
       },
     });
 

@@ -330,9 +330,15 @@ export class OrdersService {
     }
   }
 
-  async sendToFullarg(orderId: string): Promise<Order> {
+  async sendToFullarg(
+    orderId: string,
+    shippingMethod?: string,
+  ): Promise<Order> {
     try {
-      return await this.sendOrderToFullargInteractor.execute(orderId);
+      return await this.sendOrderToFullargInteractor.execute(
+        orderId,
+        shippingMethod,
+      );
     } catch (err) {
       if (err instanceof OrderNotFoundError) {
         throw new NotFoundException(

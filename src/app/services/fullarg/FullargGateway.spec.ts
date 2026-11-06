@@ -60,6 +60,22 @@ describe("FullargGateway.createOrder", () => {
     ]);
   });
 
+  it("manda shipping_method solo cuando se eligió un operador", async () => {
+    const ok = {
+      message: { ok: 1, sales_order: "SAL-ORD-2026-01891", status: "Approved" },
+    };
+
+    const withMethod = mockFetch(200, ok);
+    await new FullargGateway().createOrder({ ...input, shippingMethod: "flex" });
+    const [, a] = withMethod.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(a.body as string).shipping_method).toBe("flex");
+
+    const withoutMethod = mockFetch(200, ok);
+    await new FullargGateway().createOrder(input);
+    const [, b] = withoutMethod.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(b.body as string)).not.toHaveProperty("shipping_method");
+  });
+
   it("marca el reintento como ya existente", async () => {
     mockFetch(200, {
       message: {

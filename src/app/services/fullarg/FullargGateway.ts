@@ -48,6 +48,9 @@ export class FullargGateway implements IFullargGateway {
       body: JSON.stringify({
         external_order_id: input.externalOrderId,
         items: [{ sku: input.sku, qty: input.quantity }],
+        ...(input.shippingMethod
+          ? { shipping_method: input.shippingMethod }
+          : {}),
         buyer: {
           name: input.buyer.name,
           email: input.buyer.email,

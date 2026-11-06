@@ -28,6 +28,7 @@ import {
   OrderResponseDto,
 } from "../../dtos/orders/OrderResponseDto";
 import { ReturnOrderDto } from "../../dtos/orders/ReturnOrderDto";
+import { SendToFullargDto } from "../../dtos/orders/SendToFullargDto";
 import { SetInvoiceStatusDto } from "../../dtos/orders/SetInvoiceStatusDto";
 import { SetShippingStatusDto } from "../../dtos/orders/SetShippingStatusDto";
 import { CheckoutInternalGuard } from "../../services/checkoutInternalAuth/guards/CheckoutInternalGuard";
@@ -226,8 +227,14 @@ export class OrdersController {
       "Send an approved order to Fullarg (3PL) so they pack and dispatch it",
   })
   @ApiResponse({ status: 201, type: OrderResponseDto })
-  async sendToFullarg(@Param("id") id: string): Promise<OrderResponseDto> {
-    const order = await this.ordersService.sendToFullarg(id);
+  async sendToFullarg(
+    @Param("id") id: string,
+    @Body() body: SendToFullargDto,
+  ): Promise<OrderResponseDto> {
+    const order = await this.ordersService.sendToFullarg(
+      id,
+      body.shippingMethod,
+    );
     return OrderResponseDto.fromEntity(order);
   }
 
