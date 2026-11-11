@@ -51,6 +51,7 @@ export class FullargGateway implements IFullargGateway {
         ...(input.shippingMethod
           ? { shipping_method: input.shippingMethod }
           : {}),
+        ...(input.note ? { note: input.note.slice(0, 500) } : {}),
         buyer: {
           name: input.buyer.name,
           email: input.buyer.email,

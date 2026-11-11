@@ -12,6 +12,8 @@ export interface CreateFullargOrderInput {
     email: string;
     phone: string;
   };
+  /** Notas de entrega (`note`, máx. 500 caracteres); se ven en "Notas del pedido" de Fullarg. */
+  note?: string;
   shipping: {
     address: string;
     city: string;

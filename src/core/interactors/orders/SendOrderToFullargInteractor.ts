@@ -70,6 +70,7 @@ export class SendOrderToFullargInteractor {
       sku: this.fullargSku,
       quantity: cardUnits,
       shippingMethod: shippingMethod?.trim() || undefined,
+      note: order.shippingNotes?.trim() || undefined,
       buyer: {
         name: `${order.customerFirstName} ${order.customerLastName}`.trim(),
         email: order.customerEmail,

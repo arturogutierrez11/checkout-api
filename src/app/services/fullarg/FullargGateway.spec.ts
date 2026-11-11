@@ -76,6 +76,25 @@ describe("FullargGateway.createOrder", () => {
     expect(JSON.parse(b.body as string)).not.toHaveProperty("shipping_method");
   });
 
+  it("manda las notas de entrega como `note`, recortadas a 500 caracteres", async () => {
+    const ok = {
+      message: { ok: 1, sales_order: "SAL-ORD-2026-01891", status: "Approved" },
+    };
+
+    const withNote = mockFetch(200, ok);
+    await new FullargGateway().createOrder({
+      ...input,
+      note: "x".repeat(600),
+    });
+    const [, a] = withNote.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(a.body as string).note).toHaveLength(500);
+
+    const withoutNote = mockFetch(200, ok);
+    await new FullargGateway().createOrder(input);
+    const [, b] = withoutNote.mock.calls[0] as [string, RequestInit];
+    expect(JSON.parse(b.body as string)).not.toHaveProperty("note");
+  });
+
   it("marca el reintento como ya existente", async () => {
     mockFetch(200, {
       message: {
