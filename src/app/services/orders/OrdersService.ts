@@ -333,11 +333,13 @@ export class OrdersService {
   async sendToFullarg(
     orderId: string,
     shippingMethod?: string,
+    quantity?: number,
   ): Promise<Order> {
     try {
       return await this.sendOrderToFullargInteractor.execute(
         orderId,
         shippingMethod,
+        quantity,
       );
     } catch (err) {
       if (err instanceof OrderNotFoundError) {

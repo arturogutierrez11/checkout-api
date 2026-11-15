@@ -8,6 +8,8 @@ export class ProductResponseDto {
   @ApiProperty() price!: number;
   @ApiProperty() currency!: string;
   @ApiProperty() inStock!: boolean;
+  /** Tarjetas físicas que trae este SKU (1, 2, 10). */
+  @ApiProperty() bundleUnits!: number;
 
   static fromEntity(product: Product): ProductResponseDto {
     return {
@@ -17,6 +19,7 @@ export class ProductResponseDto {
       price: product.price,
       currency: product.currency,
       inStock: product.stock > 0,
+      bundleUnits: product.bundleUnits,
     };
   }
 }

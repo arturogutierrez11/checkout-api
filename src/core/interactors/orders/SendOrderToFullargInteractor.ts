@@ -35,7 +35,11 @@ export class SendOrderToFullargInteractor {
     private readonly fullargSku: string | undefined,
   ) {}
 
-  async execute(orderId: string, shippingMethod?: string): Promise<Order> {
+  async execute(
+    orderId: string,
+    shippingMethod?: string,
+    quantity?: number,
+  ): Promise<Order> {
     const order = await this.ordersRepository.getById(orderId);
 
     if (!order) {
@@ -62,7 +66,8 @@ export class SendOrderToFullargInteractor {
 
     // Cada SKU comercial (tag-one/two/ten) es un pack de la misma tarjeta
     // física; en Fullarg hay un solo SKU, así que mandamos tarjetas sueltas.
-    const cardUnits = order.quantity * product.bundleUnits;
+    const defaultCardUnits = order.quantity * product.bundleUnits;
+    const cardUnits = quantity ?? defaultCardUnits;
 
     const created = await this.fullargGateway.createOrder({
       externalOrderId: order.id,
@@ -98,6 +103,7 @@ export class SendOrderToFullargInteractor {
         status: created.status,
         alreadyExisted: created.alreadyExisted,
         cardUnits,
+        defaultCardUnits,
         shippingMethod: shippingMethod?.trim() || null,
       },
     });

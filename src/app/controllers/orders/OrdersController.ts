@@ -234,6 +234,7 @@ export class OrdersController {
     const order = await this.ordersService.sendToFullarg(
       id,
       body.shippingMethod,
+      body.quantity,
     );
     return OrderResponseDto.fromEntity(order);
   }
