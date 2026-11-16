@@ -64,6 +64,7 @@ import { ReturnOrderInteractor } from "../../../core/interactors/orders/ReturnOr
 import { SetInvoiceStatusInteractor } from "../../../core/interactors/orders/SetInvoiceStatusInteractor";
 import { SetShippingStatusInteractor } from "../../../core/interactors/orders/SetShippingStatusInteractor";
 import { SendOrderToFullargInteractor } from "../../../core/interactors/orders/SendOrderToFullargInteractor";
+import { ResendShippedEmailInteractor } from "../../../core/interactors/orders/ResendShippedEmailInteractor";
 import { OrdersController } from "../../controllers/orders/OrdersController";
 import { CheckoutInternalGuard } from "../../services/checkoutInternalAuth/guards/CheckoutInternalGuard";
 import { OrdersService } from "../../services/orders/OrdersService";
@@ -427,6 +428,20 @@ import { env } from "../../../config/env";
         FULLARG_GATEWAY,
         ORDER_EVENTS_REPOSITORY,
       ],
+    },
+    {
+      provide: ResendShippedEmailInteractor,
+      useFactory: (
+        ordersRepository: IOrdersRepository,
+        orderEventsRepository: IOrderEventsRepository,
+        orderEmailSender: IOrderEmailSender,
+      ) =>
+        new ResendShippedEmailInteractor(
+          ordersRepository,
+          orderEventsRepository,
+          orderEmailSender,
+        ),
+      inject: [ORDERS_REPOSITORY, ORDER_EVENTS_REPOSITORY, ORDER_EMAIL_SENDER],
     },
     CheckoutInternalGuard,
     OrdersService,

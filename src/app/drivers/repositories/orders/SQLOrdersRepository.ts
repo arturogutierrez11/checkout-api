@@ -68,6 +68,7 @@ interface OrderRow {
   fullargSalesOrder: string | null;
   fullargStatus: string | null;
   fullargSentAt: Date | string | null;
+  shippedEmailSentAt: Date | string | null;
   invoiceStatus: string | null;
   invoiceCae: string | null;
   invoiceType: string | null;
@@ -138,6 +139,7 @@ const ORDER_COLUMNS = `
   fullarg_sales_order as "fullargSalesOrder",
   fullarg_status as "fullargStatus",
   fullarg_sent_at as "fullargSentAt",
+  shipped_email_sent_at as "shippedEmailSentAt",
   invoice_status as "invoiceStatus",
   invoice_cae as "invoiceCae",
   invoice_type as "invoiceType",
@@ -575,7 +577,11 @@ export class SQLOrdersRepository implements IOrdersRepository {
   async updateFullargStatus(
     orderId: string,
     status: string,
-    shipment?: { carrier: string | null; trackingNumber: string | null },
+    shipment?: {
+      carrier: string | null;
+      trackingNumber: string | null;
+      trackingUrl?: string | null;
+    },
   ): Promise<void> {
     await this.entityManager.query(
       `
@@ -584,6 +590,7 @@ export class SQLOrdersRepository implements IOrdersRepository {
           fullarg_status = $2,
           shipping_carrier = coalesce($3, shipping_carrier),
           shipping_tracking_number = coalesce($4, shipping_tracking_number),
+          shipping_label_url = coalesce($5, shipping_label_url),
           updated_at = now()
         where id = $1
       `,
@@ -592,7 +599,46 @@ export class SQLOrdersRepository implements IOrdersRepository {
         status,
         shipment?.carrier ?? null,
         shipment?.trackingNumber ?? null,
+        shipment?.trackingUrl ?? null,
       ],
+    );
+  }
+
+  async claimShippedEmail(orderId: string): Promise<boolean> {
+    const rows = await this.queryRows<{ id: string }>(
+      `
+        update checkout_orders
+        set shipped_email_sent_at = now(), updated_at = now()
+        where id = $1
+          and shipped_email_sent_at is null
+          and shipping_tracking_number is not null
+        returning id
+      `,
+      [orderId],
+    );
+
+    return rows.length > 0;
+  }
+
+  async releaseShippedEmail(orderId: string): Promise<void> {
+    await this.entityManager.query(
+      `
+        update checkout_orders
+        set shipped_email_sent_at = null, updated_at = now()
+        where id = $1
+      `,
+      [orderId],
+    );
+  }
+
+  async markShippedEmailSent(orderId: string): Promise<void> {
+    await this.entityManager.query(
+      `
+        update checkout_orders
+        set shipped_email_sent_at = now(), updated_at = now()
+        where id = $1
+      `,
+      [orderId],
     );
   }
 
@@ -746,6 +792,7 @@ export class SQLOrdersRepository implements IOrdersRepository {
       fullargSalesOrder: row.fullargSalesOrder,
       fullargStatus: row.fullargStatus,
       fullargSentAt: this.toNullableDate(row.fullargSentAt),
+      shippedEmailSentAt: this.toNullableDate(row.shippedEmailSentAt),
       invoiceStatus: row.invoiceStatus,
       invoiceCae: row.invoiceCae,
       invoiceType: row.invoiceType,

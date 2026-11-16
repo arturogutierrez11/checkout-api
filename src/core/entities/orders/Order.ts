@@ -86,6 +86,8 @@ export interface Order {
   /** Último evento/estado que Fullarg nos avisó por webhook (ej. "shipment.dispatched"). */
   fullargStatus: string | null;
   fullargSentAt: Date | null;
+  /** Cuándo se le mandó al comprador el mail con el seguimiento del envío (null = todavía no). */
+  shippedEmailSentAt: Date | null;
 
   invoiceStatus: string | null;
   invoiceCae: string | null;

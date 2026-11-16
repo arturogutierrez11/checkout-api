@@ -34,6 +34,8 @@ import { ResyncOrderInteractor } from "../../../core/interactors/orders/ResyncOr
 import { ReturnOrderInteractor } from "../../../core/interactors/orders/ReturnOrderInteractor";
 import { SetInvoiceStatusInteractor } from "../../../core/interactors/orders/SetInvoiceStatusInteractor";
 import { SendOrderToFullargInteractor } from "../../../core/interactors/orders/SendOrderToFullargInteractor";
+import { ResendShippedEmailInteractor } from "../../../core/interactors/orders/ResendShippedEmailInteractor";
+import { OrderTrackingMissingError } from "../../../core/interactors/orders/OrderTrackingMissingError";
 import { SetShippingStatusInteractor } from "../../../core/interactors/orders/SetShippingStatusInteractor";
 import { InsufficientStockError } from "../../../core/interactors/orders/InsufficientStockError";
 import { OrderNotCancellableError } from "../../../core/interactors/orders/OrderNotCancellableError";
@@ -79,6 +81,7 @@ export class OrdersService {
     private readonly setShippingStatusInteractor: SetShippingStatusInteractor,
     private readonly setInvoiceStatusInteractor: SetInvoiceStatusInteractor,
     private readonly sendOrderToFullargInteractor: SendOrderToFullargInteractor,
+    private readonly resendShippedEmailInteractor: ResendShippedEmailInteractor,
     private readonly idempotencyService: IdempotencyService,
   ) {}
 
@@ -361,6 +364,29 @@ export class OrdersService {
         apiError(
           ApiErrorCode.fullargRequestFailed,
           err instanceof Error ? err.message : "Fullarg request failed",
+        ),
+      );
+    }
+  }
+
+  async resendShippedEmail(orderId: string): Promise<Order> {
+    try {
+      return await this.resendShippedEmailInteractor.execute(orderId);
+    } catch (err) {
+      if (err instanceof OrderNotFoundError) {
+        throw new NotFoundException(
+          apiError(ApiErrorCode.orderNotFound, err.message),
+        );
+      }
+      if (err instanceof OrderTrackingMissingError) {
+        throw new ConflictException(
+          apiError(ApiErrorCode.orderTrackingMissing, err.message),
+        );
+      }
+      throw new BadGatewayException(
+        apiError(
+          ApiErrorCode.emailSendFailed,
+          err instanceof Error ? err.message : "No pudimos enviar el mail",
         ),
       );
     }

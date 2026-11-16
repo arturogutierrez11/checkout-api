@@ -1,5 +1,6 @@
 import { IOrderEventsRepository } from "../../adapters/repositories/orderEvents/IOrderEventsRepository";
 import { IOrdersRepository } from "../../adapters/repositories/orders/IOrdersRepository";
+import { IOrderEmailSender } from "../../adapters/services/orderEmail/IOrderEmailSender";
 import { Order, ShippingStatus } from "../../entities/orders/Order";
 
 export interface ProcessFullargWebhookInput {
@@ -38,12 +39,14 @@ function pickString(body: unknown, keys: string[]): string | null {
     return null;
   }
 
-  const scopes = [
-    root,
-    ...NESTED_KEYS.map((key) => asRecord(root[key])).filter(
-      (scope): scope is Record<string, unknown> => scope !== null,
-    ),
-  ];
+  const nested = (scope: Record<string, unknown>) =>
+    NESTED_KEYS.map((key) => asRecord(scope[key])).filter(
+      (item): item is Record<string, unknown> => item !== null,
+    );
+
+  // Raíz, un nivel (data, shipment...) y dos (data.shipment...).
+  const firstLevel = nested(root);
+  const scopes = [root, ...firstLevel, ...firstLevel.flatMap(nested)];
 
   for (const scope of scopes) {
     for (const key of keys) {
@@ -51,6 +54,11 @@ function pickString(body: unknown, keys: string[]): string | null {
 
       if (typeof value === "string" && value.trim()) {
         return value.trim();
+      }
+
+      // Los números de seguimiento a veces vienen como número, no como texto.
+      if (typeof value === "number" && Number.isFinite(value)) {
+        return String(value);
       }
     }
   }
@@ -62,6 +70,7 @@ export class ProcessFullargWebhookInteractor {
   constructor(
     private readonly ordersRepository: IOrdersRepository,
     private readonly orderEventsRepository: IOrderEventsRepository,
+    private readonly orderEmailSender: IOrderEmailSender,
   ) {}
 
   async execute(input: ProcessFullargWebhookInput): Promise<void> {
@@ -91,10 +100,18 @@ export class ProcessFullargWebhookInteractor {
       "tracking_code",
     ]);
 
+    const trackingUrl = pickString(input.body, [
+      "tracking_url",
+      "trackingUrl",
+      "tracking_link",
+    ]);
+
     await this.ordersRepository.updateFullargStatus(
       order.id,
       input.event,
-      carrier || trackingNumber ? { carrier, trackingNumber } : undefined,
+      carrier || trackingNumber || trackingUrl
+        ? { carrier, trackingNumber, trackingUrl }
+        : undefined,
     );
 
     const mappedStatus = EVENT_TO_SHIPPING_STATUS[input.event];
@@ -112,6 +129,51 @@ export class ProcessFullargWebhookInteractor {
         body: asRecord(input.body) ?? {},
       },
     });
+
+    // El número de seguimiento recién llega con el despacho: en ese momento (y
+    // solo una vez) se le avisa al comprador.
+    if (order.status === "approved") {
+      await this.notifyTracking(order.id);
+    }
+  }
+
+  /**
+   * Manda el mail "Tu pedido está en camino" con el seguimiento. Un fallo del
+   * mail nunca rompe el webhook: se devuelve el turno para reintentar con el
+   * próximo evento (o a mano desde el panel) y queda registrado.
+   */
+  private async notifyTracking(orderId: string): Promise<void> {
+    const claimed = await this.ordersRepository.claimShippedEmail(orderId);
+
+    if (!claimed) {
+      return;
+    }
+
+    const order = await this.ordersRepository.getById(orderId);
+
+    if (!order) {
+      return;
+    }
+
+    try {
+      await this.orderEmailSender.sendOrderShipped(order);
+      await this.orderEventsRepository.append({
+        orderId,
+        eventType: "shipped_email_sent",
+        payload: {
+          provider: "fullarg",
+          carrier: order.shippingCarrier,
+          trackingNumber: order.shippingTrackingNumber,
+        },
+      });
+    } catch (err) {
+      await this.ordersRepository.releaseShippedEmail(orderId);
+      await this.orderEventsRepository.append({
+        orderId,
+        eventType: "shipped_email_failed",
+        payload: { message: err instanceof Error ? err.message : String(err) },
+      });
+    }
   }
 
   private async findOrder(

@@ -66,8 +66,22 @@ export interface IOrdersRepository {
   updateFullargStatus(
     orderId: string,
     status: string,
-    shipment?: { carrier: string | null; trackingNumber: string | null },
+    shipment?: {
+      carrier: string | null;
+      trackingNumber: string | null;
+      /** Link de seguimiento que informe Fullarg; se guarda en shipping_label_url, que es el que usa el mail. */
+      trackingUrl?: string | null;
+    },
   ): Promise<void>;
+  /**
+   * Atomic "first one wins": reserves the right to send the shipped email. Only succeeds if the
+   * order has a tracking number and the email wasn't sent yet. Returns whether this call got it.
+   */
+  claimShippedEmail(orderId: string): Promise<boolean>;
+  /** Gives the claim back (the send failed) so a later webhook or a manual retry can try again. */
+  releaseShippedEmail(orderId: string): Promise<void>;
+  /** Stamps the shipped email as sent regardless of its previous state (manual resend). */
+  markShippedEmailSent(orderId: string): Promise<void>;
   /** Clears a voided Zipnova shipment so a new label can be generated. Atomic: only clears if one was actually set. Returns whether it did. */
   resetShippingLabel(orderId: string): Promise<boolean>;
   /** Pass null to unassign. Returns whether the order existed. */

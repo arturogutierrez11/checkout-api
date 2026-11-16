@@ -239,6 +239,17 @@ export class OrdersController {
     return OrderResponseDto.fromEntity(order);
   }
 
+  @Post(":id/resend-shipped-email")
+  @ApiOperation({
+    summary:
+      'Resend the "your order is on its way" email (with the tracking number) to the buyer',
+  })
+  @ApiResponse({ status: 201, type: OrderResponseDto })
+  async resendShippedEmail(@Param("id") id: string): Promise<OrderResponseDto> {
+    const order = await this.ordersService.resendShippedEmail(id);
+    return OrderResponseDto.fromEntity(order);
+  }
+
   @Post(":id/reserve-stock")
   @ApiOperation({
     summary:

@@ -88,6 +88,7 @@ export class OrderResponseDto {
   @ApiProperty({ nullable: true }) fullargSalesOrder!: string | null;
   @ApiProperty({ nullable: true }) fullargStatus!: string | null;
   @ApiProperty({ nullable: true }) fullargSentAt!: string | null;
+  @ApiProperty({ nullable: true }) shippedEmailSentAt!: string | null;
 
   @ApiProperty({ nullable: true }) invoiceStatus!: string | null;
   @ApiProperty({ nullable: true }) invoicedAt!: string | null;
@@ -153,6 +154,7 @@ export class OrderResponseDto {
       fullargSalesOrder: order.fullargSalesOrder,
       fullargStatus: order.fullargStatus,
       fullargSentAt: nullableDateISOString(order.fullargSentAt),
+      shippedEmailSentAt: nullableDateISOString(order.shippedEmailSentAt),
       invoiceStatus: order.invoiceStatus,
       invoicedAt: nullableDateISOString(order.invoicedAt),
       approvedAt: nullableDateISOString(order.approvedAt),

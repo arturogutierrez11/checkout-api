@@ -12,6 +12,8 @@ export const ApiErrorCode = {
   shippingLabelNotReady: "SHIPPING_LABEL_NOT_READY",
   zipnovaRequestFailed: "ZIPNOVA_REQUEST_FAILED",
   fullargRequestFailed: "FULLARG_REQUEST_FAILED",
+  orderTrackingMissing: "ORDER_TRACKING_MISSING",
+  emailSendFailed: "EMAIL_SEND_FAILED",
   warehouseNotFound: "WAREHOUSE_NOT_FOUND",
   invalidDispatcher: "INVALID_DISPATCHER",
   idempotencyKeyReused: "IDEMPOTENCY_KEY_REUSED",
