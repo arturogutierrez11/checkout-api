@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable, Logger, UnauthorizedException } from "@nestjs/common";
 import {
   ProcessFullargWebhookInput,
   ProcessFullargWebhookInteractor,
@@ -15,6 +15,8 @@ export interface FullargWebhookRequest extends ProcessFullargWebhookInput {
 
 @Injectable()
 export class FullargWebhookService {
+  private readonly logger = new Logger(FullargWebhookService.name);
+
   constructor(
     private readonly processFullargWebhookInteractor: ProcessFullargWebhookInteractor,
   ) {}
@@ -30,6 +32,9 @@ export class FullargWebhookService {
     });
 
     if (!valid) {
+      this.logger.warn(
+        `Webhook de Fullarg rechazado por firma inválida (evento=${request.event ?? "?"}, id=${request.eventId ?? "?"}). Revisá FULLARG_WEBHOOK_SECRET.`,
+      );
       throw new UnauthorizedException(
         apiError(
           ApiErrorCode.invalidWebhookSignature,
@@ -38,10 +43,25 @@ export class FullargWebhookService {
       );
     }
 
-    await this.processFullargWebhookInteractor.execute({
+    const { matched } = await this.processFullargWebhookInteractor.execute({
       event: request.event,
       eventId: request.eventId,
       body: request.body,
     });
+
+    // Un evento que no matchea ninguna orden se descarta sin error; lo dejamos
+    // a la vista con los nombres de campo que mandó Fullarg para poder ajustarlos.
+    const body: unknown = request.body;
+    const keys =
+      body && typeof body === "object" ? Object.keys(body).join(",") : "";
+    if (matched) {
+      this.logger.log(
+        `Webhook de Fullarg aplicado (evento=${request.event ?? "?"}, id=${request.eventId ?? "?"})`,
+      );
+    } else {
+      this.logger.warn(
+        `Webhook de Fullarg sin orden asociada (evento=${request.event ?? "?"}, id=${request.eventId ?? "?"}, campos=[${keys}])`,
+      );
+    }
   }
 }

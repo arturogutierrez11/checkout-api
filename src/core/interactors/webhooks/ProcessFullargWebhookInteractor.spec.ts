@@ -88,7 +88,9 @@ describe("ProcessFullargWebhookInteractor — mail de seguimiento", () => {
     const { interactor, orders, sender, events } = build();
     sender.sendOrderShipped.mockRejectedValue(new Error("Resend caído"));
 
-    await expect(interactor.execute(dispatched)).resolves.toBeUndefined();
+    await expect(interactor.execute(dispatched)).resolves.toEqual({
+      matched: true,
+    });
 
     expect(orders.releaseShippedEmail).toHaveBeenCalledWith(ORDER_ID);
     expect(events.append).toHaveBeenCalledWith(
@@ -97,6 +99,21 @@ describe("ProcessFullargWebhookInteractor — mail de seguimiento", () => {
         payload: { message: "Resend caído" },
       }),
     );
+  });
+
+  it("avisa que no matcheó cuando el evento no trae una orden nuestra", async () => {
+    const { interactor, orders, sender } = build();
+    orders.findByFullargSalesOrder.mockResolvedValue(null);
+
+    const result = await interactor.execute({
+      event: "shipment.dispatched",
+      eventId: "evt-3",
+      body: { name: "SAL-ORD-2026-01891", tracking: "123" },
+    });
+
+    expect(result).toEqual({ matched: false });
+    expect(orders.updateFullargStatus).not.toHaveBeenCalled();
+    expect(sender.sendOrderShipped).not.toHaveBeenCalled();
   });
 
   it("encuentra el seguimiento anidado y aunque venga como número", async () => {

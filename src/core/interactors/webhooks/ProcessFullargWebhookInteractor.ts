@@ -73,7 +73,10 @@ export class ProcessFullargWebhookInteractor {
     private readonly orderEmailSender: IOrderEmailSender,
   ) {}
 
-  async execute(input: ProcessFullargWebhookInput): Promise<void> {
+  /** `matched` = encontramos una orden nuestra a la que corresponde el evento. */
+  async execute(
+    input: ProcessFullargWebhookInput,
+  ): Promise<{ matched: boolean }> {
     const salesOrder = pickString(input.body, ["sales_order", "salesOrder"]);
     const externalOrderId = pickString(input.body, [
       "external_order_id",
@@ -85,7 +88,7 @@ export class ProcessFullargWebhookInteractor {
     // Eventos que no son de una orden nuestra (stock.changed, otros
     // comercios...) se ignoran sin error para que Fullarg no reintente.
     if (!order || !input.event) {
-      return;
+      return { matched: false };
     }
 
     const carrier = pickString(input.body, [
@@ -135,6 +138,8 @@ export class ProcessFullargWebhookInteractor {
     if (order.status === "approved") {
       await this.notifyTracking(order.id);
     }
+
+    return { matched: true };
   }
 
   /**
